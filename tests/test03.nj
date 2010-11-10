@@ -1,0 +1,8 @@
+//
+// two import statements
+//
+
+package main;
+
+import aux1;
+import aux2;

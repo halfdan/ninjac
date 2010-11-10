@@ -1,0 +1,11 @@
+//
+// two classes
+//
+
+package main;
+
+class Main extends Object {
+}
+
+class Aux extends Main {
+}

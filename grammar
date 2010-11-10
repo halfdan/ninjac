@@ -1,0 +1,192 @@
+source_file		: PACKAGE IDENT SEMIC
+			  package_import_list
+			  class_dec_list
+			;
+
+package_import_list	: /* empty */
+			| package_import package_import_list
+			;
+
+package_import		: IMPORT IDENT SEMIC
+			;
+
+class_dec_list		: /* empty */
+			| class_dec class_dec_list
+			;
+
+class_dec		: PUBLIC CLASS IDENT EXTENDS IDENT
+			  LCURL member_dec_list RCURL
+			| CLASS IDENT EXTENDS IDENT
+			  LCURL member_dec_list RCURL
+			;
+
+member_dec_list		: /* empty */
+			| member_dec member_dec_list
+			;
+
+member_dec		: PUBLIC STATIC field_dec
+			| PUBLIC STATIC method_dec
+			| PUBLIC field_dec
+			| PUBLIC method_dec
+			| STATIC field_dec
+			| STATIC method_dec
+			| field_dec
+			| method_dec
+			;
+
+field_dec		: type IDENT SEMIC
+			;
+
+method_dec		: void IDENT LPAREN par_dec_list RPAREN
+			  LCURL var_dec_list stm_list RCURL
+			| type IDENT LPAREN par_dec_list RPAREN
+			  LCURL var_dec_list stm_list RCURL
+			;
+
+void			: VOID
+			;
+
+type			: IDENT
+			| IDENT LBRACK RBRACK more_dims
+			;
+
+more_dims		: /* empty */
+			| LBRACK RBRACK more_dims
+			;
+
+par_dec_list		: /* empty */
+			| non_empty_par_dec_list
+			;
+
+non_empty_par_dec_list	: par_dec
+			| par_dec COMMA non_empty_par_dec_list
+			;
+
+par_dec			: type IDENT
+			;
+
+var_dec_list		: /* empty */
+			| var_dec var_dec_list
+			;
+
+var_dec			: LOCAL type IDENT SEMIC
+			;
+
+stm_list		: /* empty */
+			| stm stm_list
+			;
+
+stm			: empty_stm
+			| compound_stm
+			| assign_stm
+			| if_stm
+			| while_stm
+			| do_stm
+			| break_stm
+			| return_stm
+			| call_stm
+			;
+
+empty_stm		: SEMIC
+			;
+
+compound_stm		: LCURL stm_list RCURL
+			;
+
+assign_stm		: var ASGN exp SEMIC
+			;
+
+if_stm			: IF LPAREN exp RPAREN stm
+			| IF LPAREN exp RPAREN stm ELSE stm
+			;
+
+while_stm		: WHILE LPAREN exp RPAREN stm
+			;
+
+do_stm			: DO stm WHILE LPAREN exp RPAREN SEMIC
+			;
+
+break_stm		: BREAK SEMIC
+			;
+
+return_stm		: RETURN SEMIC
+			| RETURN exp SEMIC
+			;
+
+call_stm		: IDENT LPAREN arg_list RPAREN SEMIC
+			| SUPER DOT IDENT LPAREN arg_list RPAREN SEMIC
+			| primary_exp DOT IDENT LPAREN arg_list RPAREN SEMIC
+			;
+
+arg_list		: /* empty */
+			| non_empty_arg_list
+			;
+
+non_empty_arg_list	: exp
+			| exp COMMA non_empty_arg_list
+			;
+
+exp			: or_exp
+			;
+
+or_exp			: and_exp
+			| or_exp LOGOR and_exp
+			;
+
+and_exp			: equ_exp
+			| and_exp LOGAND equ_exp
+			;
+
+equ_exp			: rel_exp
+			| equ_exp EQ rel_exp
+			| equ_exp NE rel_exp
+			;
+
+rel_exp			: add_exp
+			| rel_exp LT add_exp
+			| rel_exp LE add_exp
+			| rel_exp GT add_exp
+			| rel_exp GE add_exp
+			| rel_exp INSTANCEOF type
+			;
+
+add_exp			: mul_exp
+			| add_exp PLUS mul_exp
+			| add_exp MINUS mul_exp
+			;
+
+mul_exp			: unary_exp
+			| mul_exp STAR unary_exp
+			| mul_exp SLASH unary_exp
+			| mul_exp PERCENT unary_exp
+			;
+
+unary_exp		: primary_exp
+			| PLUS unary_exp
+			| MINUS unary_exp
+			| LOGNOT unary_exp
+			| LPAREN CASTTO type RPAREN unary_exp
+			;
+
+primary_exp		: NIL
+			| INTLIT
+			| BOOLEANLIT
+			| CHARLIT
+			| STRINGLIT
+			| LPAREN exp RPAREN
+			| SELF
+			| var
+			| IDENT LPAREN arg_list RPAREN
+			| SUPER DOT IDENT LPAREN arg_list RPAREN
+			| primary_exp DOT IDENT LPAREN arg_list RPAREN
+			| NEW LPAREN new_obj_spec RPAREN
+			;
+
+new_obj_spec		: IDENT
+			| IDENT LBRACK exp RBRACK more_dims
+			;
+
+var			: IDENT
+			| primary_exp LBRACK exp RBRACK
+			| primary_exp DOT IDENT
+			;

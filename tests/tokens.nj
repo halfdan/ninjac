@@ -1,0 +1,51 @@
+//
+// tokens.nj -- tokens
+//
+
+break castto class do else extends if
+import instanceof local new nil package
+public return self static super void while
+
+( ) { } [ ]
+= , ; .
+|| && !
+== != < <= > >=
++ - * / %
+
+1234
+0xDeadBeef
+
+false
+true
+
+'a'
+'\n'
+'\r'
+'\t'
+'\''
+'\"'
+'\\'
+'\.'
+//''
+//'ab'
+//'
+
+"this is a string"
+""
+"a"
+"ab\ncd"
+"ab\rcd"
+"ab\tcd"
+"ab\'cd"
+"ab\"cd"
+"ab\\cd"
+"ab\.cd"
+"\n\r\t\"\\"
+".\n\r\t\"\\."
+"\.\n\r\t\"\\\."
+//"ab
+
+x
+x123
+an_identifier
+_also_an_identifier

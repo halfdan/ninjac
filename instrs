@@ -1,0 +1,54 @@
+VM Instructions
+---------------
+
+halt                    0
+
+pushc  <const>          1
+
+add                     2
+sub                     3
+mul                     4
+div                     5
+mod                     6
+
+rdint                   7
+wrint                   8
+
+asf    <n>              9
+rsf                     10
+pushl  <n>              11
+popl   <n>              12
+
+eq                      13
+ne                      14
+lt                      15
+le                      16
+gt                      17
+ge                      18
+
+jmp    <target>         19
+brf    <target>         20
+brt    <target>         21
+
+call   <target>         22
+ret                     23
+drop   <n>              24
+pushr                   25
+popr                    26
+
+dup                     27
+
+new    <n>              28    (must be followed by address of VMT)
+getf   <n>              29
+putf   <n>              30
+
+newa                    31    (must be followed by address of VMT)
+getla                   32
+getfa                   33
+putfa                   34
+
+pushn                   35
+refeq                   36
+refne                   37
+
+vmcall <nargs>,<vmti>   38

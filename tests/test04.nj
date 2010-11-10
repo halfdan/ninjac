@@ -1,0 +1,8 @@
+//
+// one class
+//
+
+package main;
+
+class Main extends Object {
+}
