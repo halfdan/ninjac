@@ -1,8 +1,9 @@
 //
-// one class
+// two class declarations
 //
 
-package main;
+class Aux extends Main {
+}
 
-class Main extends Object {
+public class Main extends Object {
 }

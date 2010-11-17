@@ -1,108 +1,71 @@
-/* 
- * File:   table.h
- * Author: fate
- *
- * Created on 8. November 2010, 20:14
+/*
+ * table.h -- symbol table
  */
 
-#ifndef TABLE_H
-#define	TABLE_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+#ifndef _TABLE_H_
+#define _TABLE_H_
 
-    typedef struct table {
-        int isEmpty;
-        Sym *sym;
-        struct entry *entry;
-        struct table *next;
-        struct table *outerScope;
-    } Table;
 
-    #define LIST_KIND_ARG               0
-    #define LIST_KIND_FIELD             1
-    #define LIST_KIND_MEMBER            2
-    #define LIST_KIND_METHOD            3
-    #define LIST_KIND_PARAM             4
+#define ENTRY_KIND_CLASS	0
+#define ENTRY_KIND_METHOD	1
+#define ENTRY_KIND_VARIABLE	2
 
-    typedef struct list {
-        int isEmpty;
-        int kind;
-        union {
-            struct {
 
-            } argList;
-            struct {
+typedef struct {
+  int kind;
+  union {
+    struct {
+      Class *class;		/* the class record */
+    } classEntry;
+    struct {
+      boolean isPublic;		/* method visibility outside of class */
+      boolean isStatic;		/* true iff this is a class method */
+      Type *retType;		/* return type */
+      TypeList *paramTypes;	/* parameter types */
+      struct table *localTable;	/* symbol table for local variables */
+    } methodEntry;
+    struct {
+      boolean isLocal;		/* true iff this is a local variable */
+      boolean isPublic;		/* variable visibility outside of class */
+				/* always false for local variables */
+      boolean isStatic;		/* true iff this is a class variable */
+				/* always false for local variables */
+      Type *type;		/* the type of the variable */
+    } variableEntry;
+  } u;
+} Entry;
 
-            } fieldList;
-            struct {
 
-            } memberList;
-            struct {
+Entry *newClassEntry(Class *class);
+Entry *newMethodEntry(boolean isPublic, boolean isStatic,
+                      Type *retType, TypeList *paramTypes,
+                      struct table *localTable);
+Entry *newVariableEntry(boolean isLocal, boolean isPublic,
+                        boolean isStatic, Type *type);
+void showEntry(Entry *entry);
 
-            } methodList;
-            struct {
 
-            } paramList;
-        } u;
-    } List;
+typedef struct bintree {
+  Sym *sym;
+  unsigned key;
+  Entry *entry;
+  struct bintree *left;
+  struct bintree *right;
+} Bintree;
 
-    #define ENTRY_KIND_CLASS            0
-    #define ENTRY_KIND_FIELD            1
-    #define ENTRY_KIND_LOCAL            2
-    #define ENTRY_KIND_METHOD           3
-    #define ENTRY_KIND_PACKAGE          4
 
-    typedef struct entry {
-        int kind;
-        union {
-            struct {
-                char *name;
-                Sym *sym;
-                int isPublic;
-                int nFields;
-                int nMethods;
-                List *fields;
-                List *methods;
-                List *members;
-                struct entry *superClass;
-                struct entry *package;
-                struct type *type;
-                struct table *symTab;
-            } classEntry;
-            struct {
-                char *name;
-                Sym *sym;
-                int isPublic;
-                int isStatic;
-                struct type *type;
-            } fieldEntry;
-            struct {
+typedef struct table {
+  struct table *outerScope;
+  int numEntries;
+  Bintree *bintree;
+} Table;
 
-            } localEntry;
-            struct {
 
-            } methodEntry;
-            struct {
+Table *newTable(Table *outerScope);
+Entry *enter(Table *table, Sym *sym, Entry *entry);
+Entry *lookup(Table *table, Sym *sym);
+void showTable(Table *table);
 
-            } packageEntry;
-        } u;
-    } Entry;
 
-    Table *newTable(Sym *sym, Entry *entry, Table *next, Table *outerScope);
-    Table *newEmptyTable(void);
-
-    Entry *newClassEntry(char *name, Sym *sym, int isPublic, int nFields, int nMethods, Type *type, 
-             List *fields, List *methods, List *members,
-             struct entry *superClass, struct entry *package, struct type *type, struct table *symTab
-     );
-/*    Entry *newFieldEntry(Type *type);
-    Entry *newMethodEntry(Type *type);
-    Entry *newLocalEntry(Type *type);*/
-#ifdef	__cplusplus
-}
-#endif
-
-#endif	/* TABLE_H */
-
+#endif /* _TABLE_H_ */

@@ -8,7 +8,7 @@
 
 
 #define ABSYN_FILE		0
-#define ABSYN_CLASS		1
+#define ABSYN_CLASSDEC		1
 #define ABSYN_FIELDDEC		2
 #define ABSYN_METHODDEC		3
 #define ABSYN_VOIDTY		4
@@ -44,13 +44,12 @@
 #define ABSYN_SIMPLEVAR		34
 #define ABSYN_ARRAYVAR		35
 #define ABSYN_MEMBERVAR		36
-#define ABSYN_SYMLIST		37
-#define ABSYN_CLSLIST		38
-#define ABSYN_MBRLIST		39
-#define ABSYN_PARLIST		40
-#define ABSYN_VARLIST		41
-#define ABSYN_STMLIST		42
-#define ABSYN_EXPLIST		43
+#define ABSYN_CLSLIST		37
+#define ABSYN_MBRLIST		38
+#define ABSYN_PARLIST		39
+#define ABSYN_VARLIST		40
+#define ABSYN_STMLIST		41
+#define ABSYN_EXPLIST		42
 
 #define ABSYN_BINOP_LOR		0
 #define ABSYN_BINOP_LAND	1
@@ -77,16 +76,14 @@ typedef struct absyn {
   int line;
   union {
     struct {
-      Sym *package;		/* package to which the file belongs */
-      struct absyn *imports;	/* imported packages */
       struct absyn *classes;	/* classes defined in this file */
     } file;
     struct {
-      boolean publ;		/* class visibility outside of package */
+      boolean publ;		/* class visibility outside of file */
       Sym *name;		/* name of class */
       Sym *superClass;		/* name of super class */
       struct absyn *members;	/* class members */
-    } class;
+    } classDec;
     struct {
       boolean publ;		/* field visibility outside of class */
       boolean stat;		/* is this a class field? */
@@ -223,11 +220,6 @@ typedef struct absyn {
     } memberVar;
     struct {
       boolean isEmpty;		/* true: last element, head/tail unused */
-      Sym *head;		/* symbol */
-      struct absyn *tail;	/* symbol list */
-    } symList;
-    struct {
-      boolean isEmpty;		/* true: last element, head/tail unused */
       struct absyn *head;	/* class */
       struct absyn *tail;	/* class list */
     } clsList;
@@ -261,9 +253,10 @@ typedef struct absyn {
 
 
 Absyn *newFile(char *file, int line,
-               Sym *package, Absyn *imports, Absyn *classes);
-Absyn *newClass(char *file, int line,
-                boolean publ, Sym *name, Sym *superClass, Absyn *members);
+               Absyn *classes);
+Absyn *newClassDec(char *file, int line,
+                   boolean publ, Sym *name,
+                   Sym *superClass, Absyn *members);
 Absyn *newFieldDec(char *file, int line,
                    boolean publ, boolean stat, Sym *name, Absyn *type);
 Absyn *newMethodDec(char *file, int line,
@@ -328,8 +321,6 @@ Absyn *newArrayVar(char *file, int line,
                    Absyn *var, Absyn *index);
 Absyn *newMemberVar(char *file, int line,
                     Sym *name, Absyn *object);
-Absyn *emptySymList(void);
-Absyn *newSymList(Sym *head, Absyn *tail);
 Absyn *emptyClsList(void);
 Absyn *newClsList(Absyn *head, Absyn *tail);
 Absyn *emptyMbrList(void);

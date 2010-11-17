@@ -102,12 +102,6 @@ if			{
 			  return IF;
 			}
 
-import			{
-			  yylval.noVal.file = fileName;
-			  yylval.noVal.line = lineNumber;
-			  return IMPORT;
-			}
-
 instanceof		{
 			  yylval.noVal.file = fileName;
 			  yylval.noVal.line = lineNumber;
@@ -130,12 +124,6 @@ nil			{
 			  yylval.noVal.file = fileName;
 			  yylval.noVal.line = lineNumber;
 			  return NIL;
-			}
-
-package			{
-			  yylval.noVal.file = fileName;
-			  yylval.noVal.line = lineNumber;
-			  return PACKAGE;
 			}
 
 public			{
@@ -502,10 +490,6 @@ void showToken(int token) {
       printf("IF in file %s, line %d",
              yylval.noVal.file, yylval.noVal.line);
       break;
-    case IMPORT:
-      printf("IMPORT in file %s, line %d",
-             yylval.noVal.file, yylval.noVal.line);
-      break;
     case INSTANCEOF:
       printf("INSTANCEOF in file %s, line %d",
              yylval.noVal.file, yylval.noVal.line);
@@ -520,10 +504,6 @@ void showToken(int token) {
       break;
     case NIL:
       printf("NIL in file %s, line %d",
-             yylval.noVal.file, yylval.noVal.line);
-      break;
-    case PACKAGE:
-      printf("PACKAGE in file %s, line %d",
              yylval.noVal.file, yylval.noVal.line);
       break;
     case PUBLIC:

@@ -1,8 +1,9 @@
 //
-// two import statements
+// two class declarations
 //
 
-package main;
+public class Main extends Object {
+}
 
-import aux1;
-import aux2;
+class Aux extends Main {
+}

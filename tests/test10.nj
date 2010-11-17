@@ -2,11 +2,9 @@
 // one method declaration
 //
 
-package main;
-
 public class Main extends Object {
 
-  public static void Main() {
+  public static void main() {
   }
 
 }

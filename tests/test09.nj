@@ -1,9 +1,10 @@
 //
-// one field declaration
+// four field declarations
 //
 
-package main;
-
 public class Main extends Object {
-  public static Integer[][] b;
+  Integer[] a;
+  public Integer[][] b;
+  static Integer[][][] c;
+  public static Integer[][][][] d;
 }

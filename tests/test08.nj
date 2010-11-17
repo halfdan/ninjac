@@ -2,8 +2,6 @@
 // one field declaration
 //
 
-package main;
-
 public class Main extends Object {
   static Integer[][] b;
 }

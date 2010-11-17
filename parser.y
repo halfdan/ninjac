@@ -28,9 +28,9 @@ static Absyn *p;
   Absyn *node;
 }
 
-%token	<noVal>		BREAK CASTTO CLASS DO ELSE EXTENDS IF
-%token	<noVal>		IMPORT INSTANCEOF LOCAL NEW NIL PACKAGE
-%token	<noVal>		PUBLIC RETURN SELF STATIC SUPER VOID WHILE
+%token	<noVal>		BREAK CASTTO CLASS DO ELSE EXTENDS
+%token	<noVal>		IF INSTANCEOF LOCAL NEW NIL PUBLIC
+%token	<noVal>		RETURN SELF STATIC SUPER VOID WHILE
 %token	<noVal>		LPAREN RPAREN LCURL RCURL LBRACK RBRACK
 %token	<noVal>		ASGN COMMA SEMIC DOT
 %token	<noVal>		LOGOR LOGAND LOGNOT
@@ -42,8 +42,6 @@ static Absyn *p;
 %token	<stringVal>	STRINGLIT
 %token	<stringVal>	IDENT
 
-%type	<node>		package_import_list
-%type	<node>		package_import
 %type	<node>		class_dec_list
 %type	<node>		class_dec
 %type	<node>		member_dec_list
@@ -89,29 +87,9 @@ static Absyn *p;
 %%
 
 
-source_file		: PACKAGE IDENT SEMIC
-			  package_import_list
-			  class_dec_list
+source_file		: class_dec_list
 			  {
-			    fileTree = newFile($1.file, $1.line,
-			                       newSym($2.val), $4, $5);
-			  }
-			;
-
-package_import_list	: /* empty */
-			  {
-			    $$ = emptySymList();
-			  }
-			| package_import package_import_list
-			  {
-			    $1->u.symList.tail = $2;
-			    $$ = $1;
-			  }
-			;
-
-package_import		: IMPORT IDENT SEMIC
-			  {
-			    $$ = newSymList(newSym($2.val), NULL);
+			    fileTree = newFile("<dummy>", 0, $1);
 			  }
 			;
 
@@ -128,16 +106,16 @@ class_dec_list		: /* empty */
 class_dec		: PUBLIC CLASS IDENT EXTENDS IDENT
 			  LCURL member_dec_list RCURL
 			  {
-			    $$ = newClass($2.file, $2.line,
-			                  TRUE, newSym($3.val),
-			                  newSym($5.val), $7);
+			    $$ = newClassDec($2.file, $2.line,
+			                     TRUE, newSym($3.val),
+			                     newSym($5.val), $7);
 			  }
 			| CLASS IDENT EXTENDS IDENT
 			  LCURL member_dec_list RCURL
 			  {
-			    $$ = newClass($2.file, $2.line,
-			                  FALSE, newSym($2.val),
-			                  newSym($4.val), $6);
+			    $$ = newClassDec($1.file, $1.line,
+			                     FALSE, newSym($2.val),
+			                     newSym($4.val), $6);
 			  }
 			;
 

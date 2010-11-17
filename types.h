@@ -1,51 +1,70 @@
-/* 
- * File:   types.h
- * Author: fate
- *
- * Created on 8. November 2010, 22:27
+/*
+ * types.h -- type representation
  */
 
-#ifndef TYPES_H
-#define	TYPES_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
-    #define TYPE_KIND_ARRAY         0
-    #define TYPE_KIND_CLASS         1
-    #define TYPE_KIND_VOID          2
-
-    typedef struct type {
-        int kind;
-        union {
-            struct {
-                int dummy;
-            } voidType;
-            struct {
-                char *name;
-                int nMember;
-                int nMethods;
-                int nFields;
-                struct type *superType;
-            } classType;
-            struct {
-                struct type *type;
-                int number;
-            } arrayType;
-        } u;
-    } Type;
+#ifndef _TYPES_H_
+#define _TYPES_H_
 
 
-    Type *newArrayType(Type *type, int number);
-    Type *newClassType(char *name);
-    Type *newVoidType(void);
+typedef struct class {
+  boolean isPublic;		/* class visibility outside of package */
+  Sym *name;			/* name of the class */
+  struct class *superClass;	/* its superclass */
+  struct table *mbrTable;	/* symbol table for class members */
+} Class;
 
-    void showType(FILE *stream, Type *type);
 
-#ifdef	__cplusplus
-}
-#endif
+Class *newClass(boolean isPublic, Sym *name,
+                Class *superClass, struct table *mbrTable);
+boolean isSameOrSubclassOf(Class *class1, Class *class2);
+void showClass(Class *class, int pos);
 
-#endif	/* TYPES_H */
 
+#define TYPE_KIND_VOID		0
+#define TYPE_KIND_NIL		1
+#define TYPE_KIND_SIMPLE	2
+#define TYPE_KIND_ARRAY		3
+
+
+typedef struct {
+  int kind;
+  union {
+    struct {
+      int dummy;		/* empty struct not allowed in C */
+    } voidType;
+    struct {
+      int dummy;		/* empty struct not allowed in C */
+    } nilType;
+    struct {
+      Class *class;		/* the class */
+    } simpleType;
+    struct {
+      Class *base;		/* the base class */
+      int dims;			/* number of dimensions */
+    } arrayType;
+  } u;
+} Type;
+
+
+Type *newVoidType(void);
+Type *newNilType(void);
+Type *newSimpleType(Class *class);
+Type *newArrayType(Class *base, int dims);
+boolean isSameOrSubtypeOf(Type *type1, Type *type2);
+void showType(Type *type);
+
+
+typedef struct typeList {
+  boolean isEmpty;		/* true: last element, type/next unused */
+  Type *type;			/* head of the list */
+  struct typeList *next;	/* tail of the list */
+} TypeList;
+
+
+TypeList *emptyTypeList(void);
+TypeList *newTypeList(Type *type, TypeList *next);
+void showTypeList(TypeList *typeList);
+
+
+#endif /* _TYPES_H_ */

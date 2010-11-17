@@ -17,32 +17,31 @@
 
 
 Absyn *newFile(char *file, int line,
-               Sym *package, Absyn *imports, Absyn *classes) {
+               Absyn *classes) {
   Absyn *node;
 
   node = (Absyn *) allocate(sizeof(Absyn));
   node->type = ABSYN_FILE;
   node->file = file;
   node->line = line;
-  node->u.file.package = package;
-  node->u.file.imports = imports;
   node->u.file.classes = classes;
   return node;
 }
 
 
-Absyn *newClass(char *file, int line,
-                boolean publ, Sym *name, Sym *superClass, Absyn *members) {
+Absyn *newClassDec(char *file, int line,
+                   boolean publ, Sym *name,
+                   Sym *superClass, Absyn *members) {
   Absyn *node;
 
   node = (Absyn *) allocate(sizeof(Absyn));
-  node->type = ABSYN_CLASS;
+  node->type = ABSYN_CLASSDEC;
   node->file = file;
   node->line = line;
-  node->u.class.publ = publ;
-  node->u.class.name = name;
-  node->u.class.superClass = superClass;
-  node->u.class.members = members;
+  node->u.classDec.publ = publ;
+  node->u.classDec.name = name;
+  node->u.classDec.superClass = superClass;
+  node->u.classDec.members = members;
   return node;
 }
 
@@ -518,32 +517,6 @@ Absyn *newMemberVar(char *file, int line,
 }
 
 
-Absyn *emptySymList(void) {
-  Absyn *node;
-
-  node = (Absyn *) allocate(sizeof(Absyn));
-  node->type = ABSYN_SYMLIST;
-  node->file = NULL;
-  node->line = -1;
-  node->u.symList.isEmpty = TRUE;
-  return node;
-}
-
-
-Absyn *newSymList(Sym *head, Absyn *tail) {
-  Absyn *node;
-
-  node = (Absyn *) allocate(sizeof(Absyn));
-  node->type = ABSYN_SYMLIST;
-  node->file = NULL;
-  node->line = -1;
-  node->u.symList.isEmpty = FALSE;
-  node->u.symList.head = head;
-  node->u.symList.tail = tail;
-  return node;
-}
-
-
 Absyn *emptyClsList(void) {
   Absyn *node;
 
@@ -798,29 +771,24 @@ static void showNode(Absyn *node, int indent);
 static void showFile(Absyn *node, int n) {
   indent(n);
   say("File(\n");
-  indent(n + 1);
-  say(symToString(node->u.file.package));
-  say(",\n");
-  showNode(node->u.file.imports, n + 1);
-  say(",\n");
   showNode(node->u.file.classes, n + 1);
   say(")");
 }
 
 
-static void showClass(Absyn *node, int n) {
+static void showClassDec(Absyn *node, int n) {
   indent(n);
-  say("Class(\n");
+  say("ClassDec(\n");
   indent(n + 1);
-  sayBool(node->u.class.publ);
+  sayBool(node->u.classDec.publ);
   say(",\n");
   indent(n + 1);
-  say(symToString(node->u.class.name));
+  say(symToString(node->u.classDec.name));
   say(",\n");
   indent(n + 1);
-  say(symToString(node->u.class.superClass));
+  say(symToString(node->u.classDec.superClass));
   say(",\n");
-  showNode(node->u.class.members, n + 1);
+  showNode(node->u.classDec.members, n + 1);
   say(")");
 }
 
@@ -1223,22 +1191,6 @@ static void showMemberVar(Absyn *node, int n) {
 }
 
 
-static void showSymList(Absyn *node, int n) {
-  indent(n);
-  say("SymList(");
-  while (!node->u.symList.isEmpty) {
-    say("\n");
-    indent(n + 1);
-    say(symToString(node->u.symList.head));
-    node = node->u.symList.tail;
-    if (!node->u.symList.isEmpty) {
-      say(",");
-    }
-  }
-  say(")");
-}
-
-
 static void showClsList(Absyn *node, int n) {
   indent(n);
   say("ClsList(");
@@ -1337,8 +1289,8 @@ static void showNode(Absyn *node, int indent) {
     case ABSYN_FILE:
       showFile(node, indent);
       break;
-    case ABSYN_CLASS:
-      showClass(node, indent);
+    case ABSYN_CLASSDEC:
+      showClassDec(node, indent);
       break;
     case ABSYN_FIELDDEC:
       showFieldDec(node, indent);
@@ -1444,9 +1396,6 @@ static void showNode(Absyn *node, int indent) {
       break;
     case ABSYN_MEMBERVAR:
       showMemberVar(node, indent);
-      break;
-    case ABSYN_SYMLIST:
-      showSymList(node, indent);
       break;
     case ABSYN_CLSLIST:
       showClsList(node, indent);

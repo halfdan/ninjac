@@ -1,7 +1,6 @@
 //
-// one import statement
+// one class declaration
 //
 
-package main;
-
-import aux1;
+public class Main extends Object {
+}

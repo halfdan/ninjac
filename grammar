@@ -1,13 +1,4 @@
-source_file		: PACKAGE IDENT SEMIC
-			  package_import_list
-			  class_dec_list
-			;
-
-package_import_list	: /* empty */
-			| package_import package_import_list
-			;
-
-package_import		: IMPORT IDENT SEMIC
+source_file		: class_dec_list
 			;
 
 class_dec_list		: /* empty */

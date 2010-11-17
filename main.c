@@ -124,7 +124,6 @@ int main(int argc, char *argv[]) {
     }
   }
   /* do semantic amalysis */
-  /**globalTable = check(progTree, optionTables);*/
   /* generate code */
   /* done */
   return 0;

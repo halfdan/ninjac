@@ -2,9 +2,9 @@
 // tokens.nj -- tokens
 //
 
-break castto class do else extends if
-import instanceof local new nil package
-public return self static super void while
+break castto class do else extends
+if instanceof local new nil public
+return self static super void while
 
 ( ) { } [ ]
 = , ; .

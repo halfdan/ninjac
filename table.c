@@ -1,45 +1,272 @@
-#include <stdlib.h>
+/*
+ * table.c -- symbol table
+ */
+
+
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
 #include "types.h"
 #include "table.h"
 
-    Table *newTable(Sym *sym, Entry *entry, Table *next, Table *outerScope) {
-        Table *pt = (Table *) allocate(sizeof(Table));
-        pt -> isEmpty = FALSE;
-        pt -> sym = sym;
-        pt -> entry = entry;
-        pt -> next = next;
-        pt -> outerScope = outerScope;
-        return pt;
-    }
-    
-    Table *newEmptyTable(void) {
-        Table *pt = newTable(NULL, NULL, NULL, NULL);
-        pt -> isEmpty = TRUE;
-        return pt;
-    }
+
+/**************************************************************/
 
 
-    Entry *newClassEntry(char *name, Sym *sym, int isPublic, int nFields, int nMethods, Type *type,
-             List *fields, List *methods, List *members,
-             struct entry *superClass, struct entry *package, struct type *type, struct table *symTab) {
-        Entry *pe = (Entry *) allocate(sizeof(Entry));
-        pe -> kind = ENTRY_KIND_CLASS;
-        pe -> u.classEntry.name = name;
-        pe -> u.classEntry.sym = sym;
-        pe -> u.classEntry.isPublic = TRUE;
-        pe -> u.classEntry.nFields = nFields;
-        pe -> u.classEntry.nMethods = nMethods;
-        pe -> u.classEntry.type = type;
-        pe -> u.classEntry.fields =  fields;
-        pe -> u.classEntry.methods = methods;
-        pe -> u.classEntry.members = members;
-        pe -> u.classEntry.superClass = superClass;
-        pe -> u.classEntry.package = package;
-        pe -> u.classEntry.symTab = symTab;
+Entry *newClassEntry(Class *class) {
+  Entry *entry;
 
-        return pe;
+  entry = (Entry *) allocate(sizeof(Entry));
+  entry->kind = ENTRY_KIND_CLASS;
+  entry->u.classEntry.class = class;
+  return entry;
+}
+
+
+Entry *newMethodEntry(boolean isPublic, boolean isStatic,
+                      Type *retType, TypeList *paramTypes,
+                      Table *localTable) {
+  Entry *entry;
+
+  entry = (Entry *) allocate(sizeof(Entry));
+  entry->kind = ENTRY_KIND_METHOD;
+  entry->u.methodEntry.isPublic = isPublic;
+  entry->u.methodEntry.isStatic = isStatic;
+  entry->u.methodEntry.retType = retType;
+  entry->u.methodEntry.paramTypes = paramTypes;
+  entry->u.methodEntry.localTable = localTable;
+  return entry;
+}
+
+
+Entry *newVariableEntry(boolean isLocal, boolean isPublic,
+                        boolean isStatic, Type *type) {
+  Entry *entry;
+
+  entry = (Entry *) allocate(sizeof(Entry));
+  entry->kind = ENTRY_KIND_VARIABLE;
+  entry->u.variableEntry.isLocal = isLocal;
+  entry->u.variableEntry.isPublic = isPublic;
+  entry->u.variableEntry.isStatic = isStatic;
+  entry->u.variableEntry.type = type;
+  return entry;
+}
+
+
+static void indent(int n) {
+  int i;
+
+  for (i = 0; i < n; i++) {
+    printf("  ");
+  }
+}
+
+
+void showEntry(Entry *entry) {
+  switch (entry->kind) {
+    case ENTRY_KIND_CLASS:
+      printf("class:\n");
+      showClass(entry->u.classEntry.class, 10);
+      break;
+    case ENTRY_KIND_METHOD:
+      printf("method:\n");
+      indent(10);
+      printf("isPublic = %s",
+             entry->u.methodEntry.isPublic ? "yes" : "no");
+      printf("\n");
+      indent(10);
+      printf("isStatic = %s",
+             entry->u.methodEntry.isStatic ? "yes" : "no");
+      printf("\n");
+      indent(10);
+      printf("retType = ");
+      showType(entry->u.methodEntry.retType);
+      printf("\n");
+      indent(10);
+      printf("paramTypes = ");
+      showTypeList(entry->u.methodEntry.paramTypes);
+      printf("\n");
+      break;
+    case ENTRY_KIND_VARIABLE:
+      printf("variable:\n");
+      indent(10);
+      printf("isLocal = %s",
+             entry->u.variableEntry.isLocal ? "yes" : "no");
+      printf("\n");
+      indent(10);
+      printf("isPublic = %s",
+             entry->u.variableEntry.isPublic ? "yes" : "no");
+      printf("\n");
+      indent(10);
+      printf("isStatic = %s",
+             entry->u.variableEntry.isStatic ? "yes" : "no");
+      printf("\n");
+      indent(10);
+      printf("type = ");
+      showType(entry->u.variableEntry.type);
+      printf("\n");
+      break;
+    default:
+      /* this should never happen */
+      error("unknown entry kind %d in showEntry", entry->kind);
+      break;
+  }
+}
+
+
+/**************************************************************/
+
+
+Table *newTable(Table *outerScope) {
+  Table *table;
+
+  table = (Table *) allocate(sizeof(Table));
+  table->outerScope = outerScope;
+  table->numEntries = 0;
+  table->bintree = NULL;
+  return table;
+}
+
+
+Entry *enter(Table *table, Sym *sym, Entry *entry) {
+  unsigned key;
+  Bintree *newtree;
+  Bintree *current;
+  Bintree *previous;
+
+  key = symToStamp(sym);
+  newtree = (Bintree *) allocate(sizeof(Bintree));
+  newtree->sym = sym;
+  newtree->key = key;
+  newtree->entry = entry;
+  newtree->left = NULL;
+  newtree->right = NULL;
+  if (table->bintree == NULL) {
+    table->numEntries = 1;
+    table->bintree = newtree;
+  } else {
+    current = table->bintree;
+    while (1) {
+      if (current->key == key) {
+        /* symbol already in table */
+        return NULL;
+      }
+      previous = current;
+      if (current->key > key) {
+        current = current->left;
+      } else {
+        current = current->right;
+      }
+      if (current == NULL) {
+        table->numEntries++;
+        if (previous->key > key) {
+          previous->left = newtree;
+        } else {
+          previous->right = newtree;
+        }
+        break;
+      }
     }
+  }
+  return entry;
+}
+
+
+static Entry *lookupBintree(Bintree *bintree, unsigned key) {
+  while (bintree != NULL) {
+    if (bintree->key == key) {
+      return bintree->entry;
+    }
+    if (bintree->key > key) {
+      bintree = bintree->left;
+    } else {
+      bintree = bintree->right;
+    }
+  }
+  return NULL;
+}
+
+
+Entry *lookup(Table *table, Sym *sym) {
+  unsigned key;
+  Entry *entry;
+
+  key = symToStamp(sym);
+  while (table != NULL) {
+    entry = lookupBintree(table->bintree, key);
+    if (entry != NULL) {
+      return entry;
+    }
+    table = table->outerScope;
+  }
+  return NULL;
+}
+
+
+static int collectEntries(Bintree *bintree, Bintree **entries, int start) {
+  if (bintree == NULL) {
+    return start;
+  }
+  start = collectEntries(bintree->left, entries, start);
+  entries[start++] = bintree;
+  start = collectEntries(bintree->right, entries, start);
+  return start;
+}
+
+
+static int compareEntry(const void *x, const void *y) {
+  Bintree *p;
+  Bintree *q;
+
+  p = * (Bintree **) x;
+  q = * (Bintree **) y;
+  return strcmp(symToString(p->sym),
+                symToString(q->sym));
+}
+
+
+void showTable(Table *table) {
+  Bintree **entries;
+  int n, i;
+
+  printf("  number of entries = %d\n", table->numEntries);
+  if (table->bintree == NULL) {
+    printf("  <empty>\n");
+    return;
+  }
+  entries = (Bintree **) allocate(table->numEntries * sizeof(Bintree *));
+  n = collectEntries(table->bintree, entries, 0);
+  if (n != table->numEntries) {
+    /* this should never happen */
+    error("wrong number of entries in table");
+  }
+  qsort(entries, n, sizeof(Bintree *), compareEntry);
+  for (i = 0; i < n; i++) {
+    printf("  %-10s --> ", symToString(entries[i]->sym));
+    showEntry(entries[i]->entry);
+  }
+  for (i = 0; i < n; i++) {
+    switch (entries[i]->entry->kind) {
+      case ENTRY_KIND_CLASS:
+        printf("Member Table for Class '%s'\n",
+               symToString(entries[i]->sym));
+        showTable(entries[i]->entry->u.classEntry.class->mbrTable);
+        break;
+      case ENTRY_KIND_METHOD:
+        /* !!!!! must be filled in */
+        break;
+      case ENTRY_KIND_VARIABLE:
+        /* nothing to do here */
+        break;
+      default:
+        /* this should never happen */
+        error("illegal entry kind in showTable");
+        break;
+    }
+  }
+  release(entries);
+}
