@@ -9,7 +9,7 @@
 
 static void checkNode(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -19,7 +19,7 @@ static void checkNode(
         int pass);
 static void checkClassDec(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -29,7 +29,7 @@ static void checkClassDec(
         int pass);
 static void checkFieldDec(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -39,7 +39,7 @@ static void checkFieldDec(
         int pass);
 static void checkFile(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -50,7 +50,7 @@ static void checkFile(
 
 static void checkNode(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -80,7 +80,7 @@ static void checkNode(
 
 static void checkClassDec(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -97,13 +97,13 @@ static void checkClassDec(
     switch(pass) {
         case 0:
             /* Create new Table for class, fileTable as parent */
-            classTable = newTable(fileTable);
+            classTable = newTable(*fileTable);
             /* Create new Class record, no superclass, new member table */
             class = newClass(node->u.classDec.publ, node->u.classDec.name, NULL, newTable(classTable));
             /* Create new entry for file/globaltable */
             classEntry = newClassEntry(class);
             /* Add the entry to the fileTable */
-            enter(fileTable, node->u.classDec.name, classEntry);
+            enter(*fileTable, node->u.classDec.name, classEntry);
             /* ..and if it's public to the globalTable aswell */
             if(node->u.classDec.publ) {
                 enter(globalTable, node->u.classDec.name, classEntry);
@@ -132,7 +132,7 @@ static void checkClassDec(
 
 static void checkFieldDec(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -158,7 +158,7 @@ static void checkFieldDec(
 
 static void checkFOO(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -183,7 +183,7 @@ static void checkFOO(
 
 static void checkFile(
         Absyn *node,
-        Table *fileTable,
+        Table **fileTable,
         Table *localTable,
         Class *actClass,
         Table *classTable,
@@ -194,10 +194,12 @@ static void checkFile(
 
     Absyn *classList = node->u.file.classes;
     Absyn *classDec;
-
+    Table *tmp;
+    
     switch(pass) {
         case 0:
-            fileTable = newTable(globalTable);
+            
+            *fileTable = newTable(globalTable);
             if (!classList->u.clsList.isEmpty) {
                 for(classDec = classList->u.clsList.head;
                         classList->u.clsList.isEmpty == FALSE;
@@ -230,7 +232,7 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* first pass: collecting classes and other identifiers */
     globalTable = newTable(NULL);
     for(i = 0; i < numInFiles; i++) {
-        checkNode(fileTrees[i], fileTables[i], NULL, NULL, NULL,
+        checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
                 globalTable, FALSE, NULL, 0);
     }
 
