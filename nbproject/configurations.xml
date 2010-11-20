@@ -2,29 +2,14 @@
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <df name="njc-oo" root=".">
-      <df name=".svn">
-        <df name="prop-base" kind="SOURCE_LOGICAL_FOLDER">
-        </df>
-        <df name="props" kind="SOURCE_LOGICAL_FOLDER">
-        </df>
-        <df name="text-base" kind="SOURCE_LOGICAL_FOLDER">
-        </df>
-        <df name="tmp" kind="SOURCE_LOGICAL_FOLDER">
-          <df name="prop-base" kind="SOURCE_LOGICAL_FOLDER">
-          </df>
-          <df name="props" kind="SOURCE_LOGICAL_FOLDER">
-          </df>
-          <df name="text-base" kind="SOURCE_LOGICAL_FOLDER">
-          </df>
-        </df>
-        <in>dir-props</in>
-        <in>entries</in>
-      </df>
       <in>absyn.c</in>
       <in>absyn.h</in>
       <in>common.h</in>
+      <in>lex.yy.c</in>
       <in>main.c</in>
       <in>parser.h</in>
+      <in>parser.tab.c</in>
+      <in>parser.tab.h</in>
       <in>parser.y</in>
       <in>scanner.h</in>
       <in>scanner.l</in>

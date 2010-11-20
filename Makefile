@@ -8,7 +8,7 @@ LDFLAGS = -g
 LDLIBS = -lm
 
 SRCS = main.c utils.c parser.tab.c lex.yy.c sym.c \
-       absyn.c
+       absyn.c semant.c table.c types.c
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = njc
 

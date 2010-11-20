@@ -12,12 +12,13 @@
 #include "sym.h"
 #include "absyn.h"
 #include "scanner.h"
+#include "types.h"
+#include "table.h"
 #include "parser.h"
-
+#include "semant.h"
 
 #define VERSION		7
 
-#define MAX_INFILES	100
 
 
 static void version(char *myself) {
@@ -51,6 +52,7 @@ int main(int argc, char *argv[]) {
   int token;
   Absyn *fileTrees[MAX_INFILES];
   FILE *outFile;
+  Table *globalTable;
 
   /* analyze command line */
   numInFiles = 0;
@@ -111,6 +113,8 @@ int main(int argc, char *argv[]) {
       } while (token != 0);
     } else {
       yyparse();
+      /* Set file name in Absyn Tree */
+      fileTree->file = inFileName[i];
       fileTrees[i] = fileTree;
     }
   }
@@ -123,7 +127,9 @@ int main(int argc, char *argv[]) {
       showAbsyn(fileTrees[i]);
     }
   }
-  /* do semantic amalysis */
+  /* do semantic analysis */
+  globalTable = check(fileTrees, numInFiles, optionTables);
+
   /* generate code */
   /* done */
   return 0;
