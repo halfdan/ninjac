@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "common.h"
+#include "utils.h"
 #include "sym.h"
 #include "absyn.h"
 #include "types.h"
@@ -225,12 +226,22 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     Table *globalTable;
     Table *fileTable;
     Table *classTable;
-
-    Table *fileTables[MAX_INFILES];
+    Table **fileTables;
+    Class *objectClass;
+    Entry *objectEntry;
+    
     int i;
 
-    /* first pass: collecting classes and other identifiers */
+    /* Initialize trivial Classes */
     globalTable = newTable(NULL);
+    objectClass = newClass(TRUE, newSym("Object"), NULL, newTable(globalTable));
+    objectEntry = newClassEntry(objectClass);
+    enter(globalTable, objectClass->name, objectEntry);
+
+    /* Allocate needed Table pointer space */
+    fileTables = (Table **)allocate(numInFiles * sizeof(Table *));
+    
+    /* first pass: collecting classes and other identifiers */
     for(i = 0; i < numInFiles; i++) {
         checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
                 globalTable, FALSE, NULL, 0);
