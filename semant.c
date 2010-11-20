@@ -197,14 +197,14 @@ static void checkFile(
 
     switch(pass) {
         case 0:
+            fileTable = newTable(globalTable);
             if (!classList->u.clsList.isEmpty) {
                 for(classDec = classList->u.clsList.head;
                         classList->u.clsList.isEmpty == FALSE;
                         classList = classList->u.clsList.tail,
                         classDec = classList->u.clsList.head) {
                     checkClassDec(classDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
-                }
-                checkNode(node->u.file.classes, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                }                
             }
             break;
         case 1:
