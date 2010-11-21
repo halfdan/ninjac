@@ -38,6 +38,16 @@ static void checkFieldDec(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkMethodDec(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 static void checkFile(
         Absyn *node,
         Table **fileTable,
@@ -71,7 +81,8 @@ static void checkNode(
                     globalTable, breakAllowed, returnType, pass);
             break;
         case ABSYN_METHODDEC:
-
+            checkMethodDec(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
             break;
         default: {
             printf("Unknown node. Something went creepily wrong in the parser.\n");
@@ -142,6 +153,7 @@ static void checkClassDec(
                         memberList->u.mbrList.isEmpty == FALSE;
                         memberList = memberList->u.mbrList.tail,
                         memberDec = memberList->u.mbrList.head) {
+                    /* Members can be methods or fields */
                     checkNode(memberDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
                 }
             }            
@@ -171,6 +183,32 @@ static void checkFieldDec(
         case 0:
             break;
         case 1:
+            break;
+        case 2:
+            break;
+        default: {
+            printf("Error: This should never happen! You have found an invalid pass.\n");
+            exit(1);
+        }
+    }
+}
+
+static void checkMethodDec(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    switch(pass) {
+        case 0:
+            break;
+        case 1:
+            
             break;
         case 2:
             break;
@@ -224,23 +262,29 @@ static void checkFile(
     
     switch(pass) {
         case 0:
-            
+            /* Create a new file table */
             *fileTable = newTable(globalTable);
+            /* Does the file contain any classes? */
             if (!classList->u.clsList.isEmpty) {
+                /* Loop over all classes in the list */
                 for(classDec = classList->u.clsList.head;
                         classList->u.clsList.isEmpty == FALSE;
                         classList = classList->u.clsList.tail,
                         classDec = classList->u.clsList.head) {
+                    /* Check the class declaration */
                     checkClassDec(classDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
                 }                
             }
             break;
         case 1:
+            /* Does the file contain any classes? */
             if (!classList->u.clsList.isEmpty) {
+                /* Loop over all classes in the list */
                 for(classDec = classList->u.clsList.head;
                         classList->u.clsList.isEmpty == FALSE;
                         classList = classList->u.clsList.tail,
                         classDec = classList->u.clsList.head) {
+                    /* Check the class declaration */
                     checkClassDec(classDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
                 }
             }
@@ -284,19 +328,20 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     for(i = 0; i < numInFiles; i++) {
         checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
                 globalTable, FALSE, NULL, 1);
-        /*checkNode(fileTrees[i], &(fileTables[i]), globalTable, 1);*/
     }
 
     if (showSymbolTables) {
         printf("## Global Symboltable ##\n");
         showTable(globalTable);
+
+        /* Loop over all fileTables */
         for(i = 0; i < numInFiles; i++) {
             printf("## Symboltable for file '%s' ##\n", fileTrees[i]->file);
             showTable(fileTables[i]);
         }
         exit(0);
     }
-    /* thid pass: typechecking */
+    /* third pass: typechecking */
     /*for(i = 0; i < numInFiles; i++) {
         check(fileTrees[i], optionTables, globalTable, 2);
     }*/

@@ -3,7 +3,7 @@
 #
 
 CC = gcc
-CFLAGS = -Wall -Wno-unused -g
+CFLAGS = -Wall -Wno-unused -ansi -pedantic -g
 LDFLAGS = -g
 LDLIBS = -lm
 
