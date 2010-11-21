@@ -90,9 +90,10 @@ static void checkClassDec(
         Type *returnType,
         int pass) {
 
-    Absyn *memberList = node->u.classDec.members;
+    Absyn *memberList;
     Absyn *memberDec;
     Entry* classEntry;
+    Entry* superClassEntry;
     Class* class;
 
     switch(pass) {
@@ -108,18 +109,42 @@ static void checkClassDec(
             /* ..and if it's public to the globalTable aswell */
             if(node->u.classDec.publ) {
                 enter(globalTable, node->u.classDec.name, classEntry);
+            }            
+            break;
+        case 1:
+            /* Lookup current class entry */
+            classEntry = lookup(*fileTable, node->u.classDec.name);
+            /* Lookup entry of the supposed superclass */
+            superClassEntry = lookup(*fileTable, node->u.classDec.superClass);
+            /* Did we find the superclass? */
+            if(superClassEntry == NULL) {
+                printf("Superclass '%s' not found in '%s' on line %d.\n",
+                        node->u.classDec.superClass->string,
+                        node->file,
+                        node->line);
+            }
+            /* Is it really a class? */
+            else if(superClassEntry->kind != ENTRY_KIND_CLASS) {
+                printf("Symbol '%s' is not a class in '%s' on line %d.\n",
+                        node->u.classDec.superClass->string,
+                        node->file,
+                        node->line);
+            }
+            /* Set the superclass */
+            else {
+                classEntry->u.classEntry.class->superClass = (Class *)superClassEntry->u.classEntry.class;
             }
 
-            if (!memberList->u.clsList.isEmpty) {
+            memberList = node->u.classDec.members;
+            /* If memberlist isn't empty */
+            if (!memberList->u.mbrList.isEmpty) {
                 for(memberDec = memberList->u.mbrList.head;
                         memberList->u.mbrList.isEmpty == FALSE;
                         memberList = memberList->u.mbrList.tail,
                         memberDec = memberList->u.mbrList.head) {
                     checkNode(memberDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
                 }
-            }
-            break;
-        case 1:
+            }            
             break;
         case 2:
             break;
@@ -211,6 +236,14 @@ static void checkFile(
             }
             break;
         case 1:
+            if (!classList->u.clsList.isEmpty) {
+                for(classDec = classList->u.clsList.head;
+                        classList->u.clsList.isEmpty == FALSE;
+                        classList = classList->u.clsList.tail,
+                        classDec = classList->u.clsList.head) {
+                    checkClassDec(classDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                }
+            }
             break;
         case 2:
             break;
@@ -245,21 +278,24 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     for(i = 0; i < numInFiles; i++) {
         checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
                 globalTable, FALSE, NULL, 0);
+    }    
+
+    /* second pass: build class hierarchy */    
+    for(i = 0; i < numInFiles; i++) {
+        checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
+                globalTable, FALSE, NULL, 1);
+        /*checkNode(fileTrees[i], &(fileTables[i]), globalTable, 1);*/
     }
 
     if (showSymbolTables) {
+        printf("## Global Symboltable ##\n");
         showTable(globalTable);
         for(i = 0; i < numInFiles; i++) {
+            printf("## Symboltable for file '%s' ##\n", fileTrees[i]->file);
             showTable(fileTables[i]);
         }
         exit(0);
     }
-
-    /* second pass: build class hierarchy */
-    /*
-    for(i = 0; i < numInFiles; i++) {
-        check(fileTrees[i], optionTables, globalTable, 1);
-    }*/
     /* thid pass: typechecking */
     /*for(i = 0; i < numInFiles; i++) {
         check(fileTrees[i], optionTables, globalTable, 2);

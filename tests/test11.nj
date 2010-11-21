@@ -1,0 +1,15 @@
+//
+// one method declaration
+// invalid superclass
+//
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+}
+
+class Baby extends Parent {
+
+}
