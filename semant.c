@@ -58,6 +58,9 @@ static void checkFile(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
+
+
 
 static void checkNode(
         Absyn *node,
@@ -154,7 +157,10 @@ static void checkClassDec(
                         memberList = memberList->u.mbrList.tail,
                         memberDec = memberList->u.mbrList.head) {
                     /* Members can be methods or fields */
-                    checkNode(memberDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                    checkNode(memberDec, fileTable, localTable, 
+                            classEntry->u.classEntry.class,             /* Actual class */
+                            classEntry->u.classEntry.class->mbrTable,   /* Member table */
+                            globalTable, breakAllowed, returnType, pass);
                 }
             }            
             break;
@@ -179,10 +185,25 @@ static void checkFieldDec(
         Type *returnType,
         int pass) {
 
+    Entry* fieldEntry;
+    Type *fieldType;
+
     switch(pass) {
         case 0:
             break;
         case 1:
+            /* Determine the type of the field */
+            fieldType = lookupTypeFromAbsyn(node->u.fieldDec.type, fileTable);
+            /* Create new variable entry, not local */
+            fieldEntry = newVariableEntry(FALSE, node->u.fieldDec.publ, node->u.fieldDec.stat, fieldType);
+            /* Add the entry to the fileTable */
+            if(NULL == enter(classTable, node->u.fieldDec.name, fieldEntry)) {
+                printf("Field already exists in class '%s' in file '%s' on line '%d'.\n",
+                        actClass->name->string,
+                        node->file,
+                        node->line);
+                exit(1);
+            }
             break;
         case 2:
             break;
@@ -347,4 +368,64 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     }*/
 
     return fileTable;
+}
+
+Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
+    Entry *classEntry;
+    Absyn *arrayNode;
+    int i;
+
+    switch(node->type) {
+        case ABSYN_SIMPLETY:
+            classEntry = lookup(*fileTable, node->u.simpleTy.name);
+
+            if (classEntry == NULL) {
+                error("Unknown identifier '%s' in file '%s' on line '%d'",
+                        node->u.simpleTy.name->string,
+                        node->file,
+                        node->line);
+            }
+
+            if (classEntry->kind != ENTRY_KIND_CLASS) {
+                error("Identifier '%s' is not a Class in file '%s' on line '%d'",
+                        node->u.simpleTy.name->string,
+                        node->file,
+                        node->line);
+            }
+
+            return newSimpleType(classEntry->u.classEntry.class);
+            break;
+        case ABSYN_ARRAYTY:
+
+            /* This loops through the whole array type syntax tree and counts
+             * its dimensions. At the end of the loop in
+             *  - i stands for the counted dimensions.
+             *  - arrayNode is the abstract syntax node of the simple type. */
+            for (   i = 1, arrayNode = node;
+                    arrayNode->type == ABSYN_SIMPLETY;
+                    i++, arrayNode = arrayNode->u.arrayTy.baseType
+                    )
+                ;
+
+            classEntry = lookup(*fileTable, arrayNode->u.simpleTy.name);
+
+            if (classEntry == NULL) {
+                error("Unknown identifier '%s' in file '%s' on line '%d'",
+                        node->u.simpleTy.name->string,
+                        node->file,
+                        node->line);
+            }
+
+            if (classEntry->kind != ENTRY_KIND_CLASS) {
+                error("Identifier '%s' is not a Class in file '%s' on line '%d'",
+                        node->u.simpleTy.name->string,
+                        node->file,
+                        node->line);
+            }
+
+            return newArrayType(classEntry->u.classEntry.class, i);
+            break;
+        default:
+            return NULL;
+    }
 }
