@@ -58,7 +58,17 @@ static void checkFile(
         boolean breakAllowed,
         Type *returnType,
         int pass);
-Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
+static void checkParamDec(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
 
 
 
@@ -225,11 +235,61 @@ static void checkMethodDec(
         Type *returnType,
         int pass) {
 
+    Entry* methodEntry;
+    Type *tmpType;
+    TypeList *paramTypes;
+    Absyn *paramList;
+    Absyn *paramDec;
+
     switch(pass) {
         case 0:
             break;
         case 1:
-            
+            /* Determine the type of the field */
+            returnType = lookupTypeFromAbsyn(node->u.methodDec.retType, fileTable);
+
+            /* Build up the TypeList of paramTypes starting with an emptyTypeList */
+            paramTypes = emptyTypeList();
+
+            /* Creating a localTable for the method entry*/
+            localTable = newTable(classTable);
+
+            /* Getting the list of params for looping over it */
+            paramList = node->u.methodDec.params;
+
+            /* Do we have params? */
+            if(!paramList->u.parList.isEmpty) {
+                /* Loop over all params in the list */
+                for(paramDec = paramList->u.parList.head;
+                        paramList->u.parList.isEmpty == FALSE;
+                        paramList = paramList->u.clsList.tail,
+                        paramDec = paramList->u.clsList.head) {
+                    
+                    /* Get the type of the current param*/
+                    tmpType = lookupTypeFromAbsyn(paramDec->u.parDec.type, fileTable);
+
+                    /* Store the type in the paramTypes list */
+                    paramTypes = newTypeList(tmpType, paramTypes);
+
+                    /* Check the param declaration */
+                    checkParamDec(paramDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                }
+            }
+
+            methodEntry = newMethodEntry(node->u.methodDec.publ,
+                    node->u.methodDec.stat,
+                    returnType /* Return type */,
+                    paramTypes /* Param types*/,
+                    localTable /* Local table*/);
+
+            /* Add the entry to the classTable */
+            if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
+                printf("Method already exists in class '%s' in file '%s' on line '%d'.\n",
+                        actClass->name->string,
+                        node->file,
+                        node->line);
+                exit(1);
+            }
             break;
         case 2:
             break;
@@ -240,8 +300,7 @@ static void checkMethodDec(
     }
 }
 
-
-static void checkFOO(
+static void checkParamDec(
         Absyn *node,
         Table **fileTable,
         Table *localTable,
@@ -251,7 +310,7 @@ static void checkFOO(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
-
+    
     switch(pass) {
         case 0:
             break;
@@ -265,6 +324,7 @@ static void checkFOO(
         }
     }
 }
+
 
 static void checkFile(
         Absyn *node,
@@ -370,7 +430,7 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     return fileTable;
 }
 
-Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
+static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
     Entry *classEntry;
     Absyn *arrayNode;
     int i;
@@ -401,29 +461,35 @@ Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
              * its dimensions. At the end of the loop in
              *  - i stands for the counted dimensions.
              *  - arrayNode is the abstract syntax node of the simple type. */
-            for (   i = 1, arrayNode = node;
-                    arrayNode->type == ABSYN_SIMPLETY;
+            for (   i = 1, arrayNode = node->u.arrayTy.baseType;
+                    arrayNode->type != ABSYN_SIMPLETY;
                     i++, arrayNode = arrayNode->u.arrayTy.baseType
                     )
                 ;
 
+            /* Lookup the class entry of the type */
             classEntry = lookup(*fileTable, arrayNode->u.simpleTy.name);
 
+            /* Class does not exist */
             if (classEntry == NULL) {
                 error("Unknown identifier '%s' in file '%s' on line '%d'",
-                        node->u.simpleTy.name->string,
-                        node->file,
-                        node->line);
+                        arrayNode->u.simpleTy.name->string,
+                        arrayNode->file,
+                        arrayNode->line);
             }
 
             if (classEntry->kind != ENTRY_KIND_CLASS) {
                 error("Identifier '%s' is not a Class in file '%s' on line '%d'",
-                        node->u.simpleTy.name->string,
-                        node->file,
-                        node->line);
+                        arrayNode->u.simpleTy.name->string,
+                        arrayNode->file,
+                        arrayNode->line);
             }
 
             return newArrayType(classEntry->u.classEntry.class, i);
+            break;
+
+        case ABSYN_VOIDTY:
+            return newVoidType();
             break;
         default:
             return NULL;
