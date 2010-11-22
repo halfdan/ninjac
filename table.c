@@ -156,7 +156,7 @@ Entry *enter(Table *table, Sym *sym, Entry *entry) {
         return NULL;
       }
       previous = current;
-      if (current->key > key && current->entry->kind == entry->kind) {
+      if (current->key > key) {
         current = current->left;
       } else {
         current = current->right;
@@ -181,7 +181,7 @@ static Entry *lookupBintree(Bintree *bintree, unsigned key, int kind) {
     if (bintree->key == key && bintree->entry->kind == kind) {
       return bintree->entry;
     }
-    if (bintree->key > key && bintree->entry->kind != kind) {
+    if (bintree->key > key) {
       bintree = bintree->left;
     } else {
       bintree = bintree->right;

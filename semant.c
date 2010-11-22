@@ -168,7 +168,7 @@ static void checkClassDec(
             }            
             break;
         case 1:
-            /* Lookup current class entry */
+            /* Lookup current class entry, should never be NULL */
             classEntry = lookup(*fileTable, node->u.classDec.name, ENTRY_KIND_CLASS);
             /* Lookup entry of the supposed superclass */
             superClassEntry = lookup(*fileTable, node->u.classDec.superClass, ENTRY_KIND_CLASS);
@@ -178,14 +178,7 @@ static void checkClassDec(
                         node->u.classDec.superClass->string,
                         node->file,
                         node->line);
-            }
-            /* Is it really a class? */
-            else if(superClassEntry->kind != ENTRY_KIND_CLASS) {
-                printf("Symbol '%s' is not a class in '%s' on line %d.\n",
-                        node->u.classDec.superClass->string,
-                        node->file,
-                        node->line);
-            }
+            }           
             /* Set the superclass */
             else {
                 classEntry->u.classEntry.class->superClass = superClassEntry->u.classEntry.class;
@@ -228,8 +221,7 @@ static void checkClassDec(
             }
             break;
         default: {
-            printf("Error: This should never happen! You have found an invalid pass.\n");
-            exit(1);
+            error("This should never happen! You have found an invalid pass.");
         }
     }
 }
@@ -261,11 +253,10 @@ static void checkFieldDec(
             fieldEntry = newVariableEntry(FALSE, node->u.fieldDec.publ, node->u.fieldDec.stat, fieldType);
             /* Add the entry to the fileTable */
             if(NULL == enter(classTable, node->u.fieldDec.name, fieldEntry)) {
-                printf("Field already exists in class '%s' in file '%s' on line '%d'.\n",
+                error("Field already exists in class '%s' in file '%s' on line %d.",
                         actClass->name->string,
                         node->file,
                         node->line);
-                exit(1);
             }
             break;
         default: {
@@ -333,6 +324,19 @@ static void checkMethodDec(
                 }
             }
 
+            /* Does the method contain any locals? */
+            localList = node->u.methodDec.locals;
+            if (!localList->u.varList.isEmpty) {
+                /* Loop over all local variables in the list */
+                for(localDec = localList->u.varList.head;
+                        localList->u.varList.isEmpty == FALSE;
+                        localList = localList->u.varList.tail,
+                        localDec = localList->u.varList.head) {
+                    /* Check the variable declaration */
+                    checkVarDec(localDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                }
+            }
+
             methodEntry = newMethodEntry(node->u.methodDec.publ,
                     node->u.methodDec.stat,
                     returnType /* Return type */,
@@ -342,11 +346,10 @@ static void checkMethodDec(
             /* Add the entry to the classTable */
             if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
                 /* We don't allow method overloading at this point in Ninja */
-                printf("Method already exists in class '%s' in file '%s' on line '%d'.\n",
+                error("Method already exists in class '%s' in file '%s' on line '%d'.",
                         actClass->name->string,
                         node->file,
                         node->line);
-                exit(1);
             }
             break;
         case 3:
@@ -367,19 +370,6 @@ static void checkMethodDec(
                 }
             }
 
-            /* Does the file contain any locals? */
-            localList = node->u.methodDec.locals;
-            if (!localList->u.varList.isEmpty) {
-                /* Loop over all local variables in the list */
-                for(localDec = localList->u.varList.head;
-                        localList->u.varList.isEmpty == FALSE;
-                        localList = localList->u.varList.tail,
-                        localDec = localList->u.varList.head) {
-                    /* Check the variable declaration */
-                    checkNode(localDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
-                }
-            }
-
             /* Does the file contain any statements? */
             stmtList = node->u.methodDec.stms;
             if (!stmtList->u.stmList.isEmpty) {
@@ -389,7 +379,7 @@ static void checkMethodDec(
                         stmtList = stmtList->u.stmList.tail,
                         stmtDec = stmtList->u.stmList.head) {
                     /* Check the statement declaration */
-                    checkNode(stmtDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                    /* checkNode(stmtDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass); */
                 }
             }
             break;
@@ -409,13 +399,28 @@ static void checkParamDec(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
-    
+
+    Type *variableType;
+    Entry* variableEntry;
+
     switch(pass) {
         case 0:
             break;
         case 1:
             break;
         case 2:
+            /* Lookup the type of the parameter */
+            variableType = lookupTypeFromAbsyn(node->u.parDec.type, fileTable);
+            /* Create new variable entry (a param is a local variable after all) */
+            variableEntry = newVariableEntry(TRUE, FALSE, FALSE, variableType);
+            /* Add the entry to the localTable */
+            if(NULL == enter(localTable, node->u.parDec.name, variableEntry)) {
+                /* Multiple definitions of variables are not allowed  */
+                error("Variable '%s' already exists in method in file '%s' on line %d.",
+                        node->u.parDec.name->string,
+                        node->file,
+                        node->line);
+            }
             break;
         case 3:
             break;
@@ -436,12 +441,27 @@ static void checkVarDec(
         Type *returnType,
         int pass) {
 
-     switch(pass) {
+    Type *variableType;
+    Entry* variableEntry;
+
+    switch(pass) {
         case 0:
             break;
         case 1:
             break;
         case 2:
+            /* Lookup the type of the local variable */
+            variableType = lookupTypeFromAbsyn(node->u.varDec.type, fileTable);
+            /* Create new local variable entry */
+            variableEntry = newVariableEntry(TRUE, FALSE, FALSE, variableType);
+            /* Add the entry to the localTable */
+            if(NULL == enter(localTable, node->u.varDec.name, variableEntry)) {
+                /* Multiple definitions of variables are not allowed  */
+                error("Variable '%s' already exists in method in file '%s' on line %d.",
+                        node->u.varDec.name->string,
+                        node->file,
+                        node->line);
+            }
             break;
         case 3:
             break;
@@ -671,6 +691,7 @@ static boolean isParamTypeListEqual(TypeList *parList1, TypeList *parList2) {
     if(!tmpList1->isEmpty || !tmpList2->isEmpty) {
         return FALSE;
     }
+    /* ToDo: Could check which list is longer/shorter */
 
     return TRUE;
 }
