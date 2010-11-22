@@ -151,12 +151,12 @@ Entry *enter(Table *table, Sym *sym, Entry *entry) {
   } else {
     current = table->bintree;
     while (1) {
-      if (current->key == key) {
+      if (current->key == key && current->entry->kind == entry->kind) {
         /* symbol already in table */
         return NULL;
       }
       previous = current;
-      if (current->key > key) {
+      if (current->key > key && current->entry->kind == entry->kind) {
         current = current->left;
       } else {
         current = current->right;
@@ -176,12 +176,12 @@ Entry *enter(Table *table, Sym *sym, Entry *entry) {
 }
 
 
-static Entry *lookupBintree(Bintree *bintree, unsigned key) {
+static Entry *lookupBintree(Bintree *bintree, unsigned key, int kind) {
   while (bintree != NULL) {
     if (bintree->key == key) {
       return bintree->entry;
     }
-    if (bintree->key > key) {
+    if (bintree->key > key && bintree->entry->kind == kind) {
       bintree = bintree->left;
     } else {
       bintree = bintree->right;
@@ -191,13 +191,13 @@ static Entry *lookupBintree(Bintree *bintree, unsigned key) {
 }
 
 
-Entry *lookup(Table *table, Sym *sym) {
+Entry *lookup(Table *table, Sym *sym, int kind) {
   unsigned key;
   Entry *entry;
 
   key = symToStamp(sym);
   while (table != NULL) {
-    entry = lookupBintree(table->bintree, key);
+    entry = lookupBintree(table->bintree, key, kind);
     if (entry != NULL) {
       return entry;
     }

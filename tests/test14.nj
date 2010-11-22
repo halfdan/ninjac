@@ -1,0 +1,15 @@
+//
+// two method with 2 params and 2 field declarations
+//
+
+public class Main extends Object {
+
+  public static Object foo;
+
+  public static void main(Object a, Object b) {
+  }
+
+  static Object foo(Object a, Object b) {
+  }
+
+}

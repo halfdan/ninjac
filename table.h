@@ -64,7 +64,7 @@ typedef struct table {
 
 Table *newTable(Table *outerScope);
 Entry *enter(Table *table, Sym *sym, Entry *entry);
-Entry *lookup(Table *table, Sym *sym);
+Entry *lookup(Table *table, Sym *sym, int kind);
 void showTable(Table *table);
 
 

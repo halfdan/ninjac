@@ -69,7 +69,7 @@ static void checkParamDec(
         Type *returnType,
         int pass);
 static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
-
+static boolean isParamTypeListEqual(TypeList *parList1, TypeList *parList2);
 
 
 static void checkNode(
@@ -137,9 +137,9 @@ static void checkClassDec(
             break;
         case 1:
             /* Lookup current class entry */
-            classEntry = lookup(*fileTable, node->u.classDec.name);
+            classEntry = lookup(*fileTable, node->u.classDec.name, ENTRY_KIND_CLASS);
             /* Lookup entry of the supposed superclass */
-            superClassEntry = lookup(*fileTable, node->u.classDec.superClass);
+            superClassEntry = lookup(*fileTable, node->u.classDec.superClass, ENTRY_KIND_CLASS);
             /* Did we find the superclass? */
             if(superClassEntry == NULL) {
                 printf("Superclass '%s' not found in '%s' on line %d.\n",
@@ -157,6 +157,11 @@ static void checkClassDec(
             /* Set the superclass */
             else {
                 classEntry->u.classEntry.class->superClass = (Class *)superClassEntry->u.classEntry.class;
+                /* Override outerscope to the table of the superclass.
+                 * As everything on the toplevel extends Object we don't loose
+                 * our pointer to the fileTable.
+                 */
+                classEntry->u.classEntry.class->mbrTable->outerScope = superClassEntry->u.classEntry.class->mbrTable;
             }
 
             memberList = node->u.classDec.members;
@@ -236,6 +241,7 @@ static void checkMethodDec(
         int pass) {
 
     Entry* methodEntry;
+    Entry* tmpEntry;
     Type *tmpType;
     TypeList *paramTypes;
     Absyn *paramList;
@@ -282,8 +288,11 @@ static void checkMethodDec(
                     paramTypes /* Param types*/,
                     localTable /* Local table*/);
 
+            
+
             /* Add the entry to the classTable */
             if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
+                /* We don't allow method overloading at this point in Ninja */
                 printf("Method already exists in class '%s' in file '%s' on line '%d'.\n",
                         actClass->name->string,
                         node->file,
@@ -437,7 +446,7 @@ static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
 
     switch(node->type) {
         case ABSYN_SIMPLETY:
-            classEntry = lookup(*fileTable, node->u.simpleTy.name);
+            classEntry = lookup(*fileTable, node->u.simpleTy.name, ENTRY_KIND_VARIABLE);
 
             if (classEntry == NULL) {
                 error("Unknown identifier '%s' in file '%s' on line '%d'",
@@ -468,7 +477,7 @@ static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
                 ;
 
             /* Lookup the class entry of the type */
-            classEntry = lookup(*fileTable, arrayNode->u.simpleTy.name);
+            classEntry = lookup(*fileTable, arrayNode->u.simpleTy.name, ENTRY_KIND_VARIABLE);
 
             /* Class does not exist */
             if (classEntry == NULL) {
@@ -494,4 +503,27 @@ static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
         default:
             return NULL;
     }
+}
+
+static boolean isParamTypeListEqual(TypeList *parList1, TypeList *parList2) {
+
+    TypeList *tmpList1, *tmpList2;
+
+    for(
+            tmpList1 = parList1,
+            tmpList2 = parList2;
+            tmpList1 != NULL && tmpList2 != NULL;
+            tmpList1 = tmpList1->next,
+            tmpList2 = tmpList2->next
+        ) {
+        if(!isSameOrSubtypeOf(tmpList1->type, tmpList2->type)) {
+            return FALSE;
+        }
+    }
+
+    if(tmpList1 != NULL || tmpList2 != NULL) {
+        return FALSE;
+    }
+
+    return TRUE;
 }
