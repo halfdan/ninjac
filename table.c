@@ -178,10 +178,10 @@ Entry *enter(Table *table, Sym *sym, Entry *entry) {
 
 static Entry *lookupBintree(Bintree *bintree, unsigned key, int kind) {
   while (bintree != NULL) {
-    if (bintree->key == key) {
+    if (bintree->key == key && bintree->entry->kind == kind) {
       return bintree->entry;
     }
-    if (bintree->key > key && bintree->entry->kind == kind) {
+    if (bintree->key > key && bintree->entry->kind != kind) {
       bintree = bintree->left;
     } else {
       bintree = bintree->right;

@@ -286,6 +286,8 @@ static void checkMethodDec(
                     paramTypes /* Param types*/,
                     localTable /* Local table*/);
 
+            /* MOVE TO PASS 3!!! 
+             * Can't be done here because methods might not have been collected for superclasses */
             /* Does the method already exist in the super class? */
             tmpEntry = lookupMember(actClass->superClass, node->u.methodDec.name, ENTRY_KIND_METHOD);
             if(tmpEntry != NULL) {
@@ -474,7 +476,7 @@ static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
 
     switch(node->type) {
         case ABSYN_SIMPLETY:
-            classEntry = lookup(*fileTable, node->u.simpleTy.name, ENTRY_KIND_VARIABLE);
+            classEntry = lookup(*fileTable, node->u.simpleTy.name, ENTRY_KIND_CLASS);
 
             if (classEntry == NULL) {
                 error("Unknown identifier '%s' in file '%s' on line '%d'",
@@ -505,7 +507,7 @@ static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
                 ;
 
             /* Lookup the class entry of the type */
-            classEntry = lookup(*fileTable, arrayNode->u.simpleTy.name, ENTRY_KIND_VARIABLE);
+            classEntry = lookup(*fileTable, arrayNode->u.simpleTy.name, ENTRY_KIND_CLASS);
 
             /* Class does not exist */
             if (classEntry == NULL) {
@@ -537,10 +539,11 @@ static boolean isParamTypeListEqual(TypeList *parList1, TypeList *parList2) {
 
     TypeList *tmpList1, *tmpList2;
 
+    /* Loop over the two lists and compare their types*/
     for(
             tmpList1 = parList1,
             tmpList2 = parList2;
-            tmpList1 != NULL && tmpList2 != NULL;
+            !tmpList1->isEmpty && !tmpList2->isEmpty;
             tmpList1 = tmpList1->next,
             tmpList2 = tmpList2->next
         ) {
@@ -549,7 +552,10 @@ static boolean isParamTypeListEqual(TypeList *parList1, TypeList *parList2) {
         }
     }
 
-    if(tmpList1 != NULL || tmpList2 != NULL) {
+    /* If one of the elements is not empty we have
+     * parameter lists of different length
+     */
+    if(!tmpList1->isEmpty || !tmpList2->isEmpty) {
         return FALSE;
     }
 
