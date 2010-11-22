@@ -156,14 +156,10 @@ static void checkClassDec(
             }
             /* Set the superclass */
             else {
-                classEntry->u.classEntry.class->superClass = (Class *)superClassEntry->u.classEntry.class;
-                /* Override outerscope to the table of the superclass.
-                 * As everything on the toplevel extends Object we don't loose
-                 * our pointer to the fileTable.
-                 */
-                classEntry->u.classEntry.class->mbrTable->outerScope = superClassEntry->u.classEntry.class->mbrTable;
-            }
-
+                classEntry->u.classEntry.class->superClass = superClassEntry->u.classEntry.class;
+            }            
+            break;
+        case 2:
             memberList = node->u.classDec.members;
             /* If memberlist isn't empty */
             if (!memberList->u.mbrList.isEmpty) {
@@ -172,14 +168,12 @@ static void checkClassDec(
                         memberList = memberList->u.mbrList.tail,
                         memberDec = memberList->u.mbrList.head) {
                     /* Members can be methods or fields */
-                    checkNode(memberDec, fileTable, localTable, 
+                    checkNode(memberDec, fileTable, localTable,
                             classEntry->u.classEntry.class,             /* Actual class */
                             classEntry->u.classEntry.class->mbrTable,   /* Member table */
                             globalTable, breakAllowed, returnType, pass);
                 }
-            }            
-            break;
-        case 2:
+            }
             break;
         default: {
             printf("Error: This should never happen! You have found an invalid pass.\n");
@@ -206,7 +200,9 @@ static void checkFieldDec(
     switch(pass) {
         case 0:
             break;
-        case 1:
+        case 1:           
+            break;
+        case 2:
             /* Determine the type of the field */
             fieldType = lookupTypeFromAbsyn(node->u.fieldDec.type, fileTable);
             /* Create new variable entry, not local */
@@ -219,8 +215,6 @@ static void checkFieldDec(
                         node->line);
                 exit(1);
             }
-            break;
-        case 2:
             break;
         default: {
             printf("Error: This should never happen! You have found an invalid pass.\n");
@@ -250,7 +244,9 @@ static void checkMethodDec(
     switch(pass) {
         case 0:
             break;
-        case 1:
+        case 1:            
+            break;
+        case 2:
             /* Determine the type of the field */
             returnType = lookupTypeFromAbsyn(node->u.methodDec.retType, fileTable);
 
@@ -270,7 +266,7 @@ static void checkMethodDec(
                         paramList->u.parList.isEmpty == FALSE;
                         paramList = paramList->u.clsList.tail,
                         paramDec = paramList->u.clsList.head) {
-                    
+
                     /* Get the type of the current param*/
                     tmpType = lookupTypeFromAbsyn(paramDec->u.parDec.type, fileTable);
 
@@ -288,7 +284,7 @@ static void checkMethodDec(
                     paramTypes /* Param types*/,
                     localTable /* Local table*/);
 
-            
+
 
             /* Add the entry to the classTable */
             if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
@@ -300,7 +296,7 @@ static void checkMethodDec(
                 exit(1);
             }
             break;
-        case 2:
+        case 3:
             break;
         default: {
             printf("Error: This should never happen! You have found an invalid pass.\n");
@@ -326,6 +322,8 @@ static void checkParamDec(
         case 1:
             break;
         case 2:
+            break;
+        case 3:
             break;
         default: {
             printf("Error: This should never happen! You have found an invalid pass.\n");
@@ -380,6 +378,19 @@ static void checkFile(
             }
             break;
         case 2:
+            /* Does the file contain any classes? */
+            if (!classList->u.clsList.isEmpty) {
+                /* Loop over all classes in the list */
+                for(classDec = classList->u.clsList.head;
+                        classList->u.clsList.isEmpty == FALSE;
+                        classList = classList->u.clsList.tail,
+                        classDec = classList->u.clsList.head) {
+                    /* Check the class declaration */
+                    checkClassDec(classDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                }
+            }
+            break;
+        case 3:
             break;
         default: {
             printf("Error: This should never happen! You have found an invalid pass.\n");
@@ -420,6 +431,12 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
                 globalTable, FALSE, NULL, 1);
     }
 
+    /* third pass: typechecking */
+    for(i = 0; i < numInFiles; i++) {
+         checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
+                globalTable, FALSE, NULL, 2);
+    }
+
     if (showSymbolTables) {
         printf("## Global Symboltable ##\n");
         showTable(globalTable);
@@ -431,10 +448,6 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
         }
         exit(0);
     }
-    /* third pass: typechecking */
-    /*for(i = 0; i < numInFiles; i++) {
-        check(fileTrees[i], optionTables, globalTable, 2);
-    }*/
 
     return fileTable;
 }
