@@ -160,6 +160,8 @@ static void checkClassDec(
             }            
             break;
         case 2:
+            /* Lookup current class entry */
+            classEntry = lookup(*fileTable, node->u.classDec.name, ENTRY_KIND_CLASS);
             memberList = node->u.classDec.members;
             /* If memberlist isn't empty */
             if (!memberList->u.mbrList.isEmpty) {
@@ -284,7 +286,20 @@ static void checkMethodDec(
                     paramTypes /* Param types*/,
                     localTable /* Local table*/);
 
+            /* Does the method already exist in the super class? */
+            tmpEntry = lookupMember(actClass->superClass, node->u.methodDec.name, ENTRY_KIND_METHOD);
+            if(tmpEntry != NULL) {
+                /* Wenn die Methode public ist, nicht static und den gleichen returnType hat.. */
+                if(!(tmpEntry->u.methodEntry.isPublic &&
+                        /* Return type can be equal or more specific */
+                        isSameOrSubtypeOf(tmpEntry->u.methodEntry.retType, returnType) &&
+                        /* Param types of current class can be equal or more generalized */
+                        isParamTypeListEqual(paramTypes, tmpEntry->u.methodEntry.paramTypes))
+                        ) {
 
+                    error("Method already exists in superclass but declarations don't match.");
+                }
+            }
 
             /* Add the entry to the classTable */
             if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {

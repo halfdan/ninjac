@@ -206,6 +206,26 @@ Entry *lookup(Table *table, Sym *sym, int kind) {
   return NULL;
 }
 
+Entry *lookupMember(Class *class, Sym *sym, int kind) {
+    unsigned key;
+    Entry *entry;
+    Table *table;
+    Class *tmpClass;
+
+    key = symToStamp(sym);
+    tmpClass = class;
+
+    while(tmpClass != NULL) {
+        table = tmpClass->mbrTable;
+        entry = lookupBintree(table->bintree, key, kind);
+        if(entry != NULL) {
+            return entry;
+        }
+        tmpClass = tmpClass->superClass;
+    }
+    return NULL;
+}
+
 
 static int collectEntries(Bintree *bintree, Bintree **entries, int start) {
   if (bintree == NULL) {
