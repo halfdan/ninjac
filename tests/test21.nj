@@ -1,0 +1,9 @@
+//
+// one method with an empty statement
+//
+
+public class Main extends Object {
+  public static void main() {
+    {}
+  }
+}

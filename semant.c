@@ -101,6 +101,16 @@ static void checkVarDec(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkCompStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
 static boolean isParamTypeListEqual(TypeList *parList1, TypeList *parList2);
 
@@ -129,8 +139,14 @@ static void checkNode(
             checkMethodDec(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
+        case ABSYN_EMPTYSTM:
+            break;
+        case ABSYN_COMPSTM:
+            checkCompStm(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
         default: {
-            printf("Unknown node. Something went creepily wrong in the parser.\n");
+            error("Unknown node %d. Something went creepily wrong in the parser.", node->type);
         }
     }
 }
@@ -259,6 +275,8 @@ static void checkFieldDec(
                         node->line);
             }
             break;
+        case 3:
+            break;
         default: {
             error("This should never happen! You have found an invalid pass.");
         }
@@ -379,7 +397,7 @@ static void checkMethodDec(
                         stmtList = stmtList->u.stmList.tail,
                         stmtDec = stmtList->u.stmList.head) {
                     /* Check the statement declaration */
-                    /* checkNode(stmtDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass); */
+                    checkNode(stmtDec, fileTable, methodEntry->u.methodEntry.localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
                 }
             }
             break;
@@ -549,6 +567,34 @@ static void checkFile(
     }
 }
 
+static void checkCompStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Absyn *stmtList;
+    Absyn *stmtDec;
+
+    /* Does this compound statement contain any statements? */
+    stmtList = node->u.compStm.stms;
+    if (!stmtList->u.stmList.isEmpty) {
+        /* Loop over all statements in the list */
+        for(stmtDec = stmtList->u.stmList.head;
+                stmtList->u.stmList.isEmpty == FALSE;
+                stmtList = stmtList->u.stmList.tail,
+                stmtDec = stmtList->u.stmList.head) {
+            /* Check the statement declaration */
+            checkNode(stmtDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+        }
+    }
+}
+
 Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* initialize tables and foobars */
     Table *globalTable;
@@ -581,10 +627,16 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
                 globalTable, FALSE, NULL, 1);
     }
 
-    /* third pass: typechecking */
+    /* third pass: stuff */
     for(i = 0; i < numInFiles; i++) {
          checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
                 globalTable, FALSE, NULL, 2);
+    }
+
+    /* fourth pass: typechecking */
+    for(i = 0; i < numInFiles; i++) {
+         checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
+                globalTable, FALSE, NULL, 3);
     }
 
     if (showSymbolTables) {
