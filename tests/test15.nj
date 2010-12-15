@@ -9,13 +9,13 @@ public class Main extends Object {
   public static void main(Object a, Object b) {
   }
 
-  public Object foo(Object a, Object b) {
+  public Object foo(Object a, Main b) {
   }
 
 }
 
 public class Child extends Main {
 
-  public Object foo(Object a, Object b) {
+  public Child foo(Object a, Object b) {
   }
 }

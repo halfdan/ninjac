@@ -464,14 +464,27 @@ Absyn *newCallExp(char *file, int line,
 
 
 Absyn *newNewExp(char *file, int line,
-                 Absyn *type) {
+                 Sym *name, Absyn *args) {
   Absyn *node;
 
   node = (Absyn *) allocate(sizeof(Absyn));
   node->type = ABSYN_NEWEXP;
   node->file = file;
   node->line = line;
-  node->u.newExp.type = type;
+  node->u.newExp.name = name;
+  node->u.newExp.args = args;
+  return node;
+}
+
+Absyn *newNewArrayExp(char *file, int line,
+                 Absyn *type) {
+  Absyn *node;
+
+  node = (Absyn *) allocate(sizeof(Absyn));
+  node->type = ABSYN_NEWARRAYEXP;
+  node->file = file;
+  node->line = line;
+  node->u.newArrayExp.type = type;
   return node;
 }
 
@@ -1157,10 +1170,19 @@ static void showCallExp(Absyn *node, int n) {
 static void showNewExp(Absyn *node, int n) {
   indent(n);
   say("NewExp(\n");
-  showNode(node->u.newExp.type, n + 1);
+  indent(n + 1);
+  say(symToString(node->u.newExp.name));
+  say(",\n");
+  showNode(node->u.newExp.args, n + 1);
   say(")");
 }
 
+static void showNewArrayExp(Absyn *node, int n) {
+  indent(n);
+  say("NewArrayExp(\n");
+  showNode(node->u.newArrayExp.type, n + 1);
+  say(")");
+}
 
 static void showSimpleVar(Absyn *node, int n) {
   indent(n);
@@ -1387,6 +1409,9 @@ static void showNode(Absyn *node, int indent) {
       break;
     case ABSYN_NEWEXP:
       showNewExp(node, indent);
+      break;
+    case ABSYN_NEWARRAYEXP:
+      showNewArrayExp(node, indent);
       break;
     case ABSYN_SIMPLEVAR:
       showSimpleVar(node, indent);

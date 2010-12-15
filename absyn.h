@@ -41,15 +41,16 @@
 #define ABSYN_VAREXP		31
 #define ABSYN_CALLEXP		32
 #define ABSYN_NEWEXP		33
-#define ABSYN_SIMPLEVAR		34
-#define ABSYN_ARRAYVAR		35
-#define ABSYN_MEMBERVAR		36
-#define ABSYN_CLSLIST		37
-#define ABSYN_MBRLIST		38
-#define ABSYN_PARLIST		39
-#define ABSYN_VARLIST		40
-#define ABSYN_STMLIST		41
-#define ABSYN_EXPLIST		42
+#define ABSYN_NEWARRAYEXP       34
+#define ABSYN_SIMPLEVAR		35
+#define ABSYN_ARRAYVAR		36
+#define ABSYN_MEMBERVAR		37
+#define ABSYN_CLSLIST		38
+#define ABSYN_MBRLIST		39
+#define ABSYN_PARLIST		40
+#define ABSYN_VARLIST		41
+#define ABSYN_STMLIST		42
+#define ABSYN_EXPLIST		43
 
 #define ABSYN_BINOP_LOR		0
 #define ABSYN_BINOP_LAND	1
@@ -205,8 +206,12 @@ typedef struct absyn {
       struct absyn *args;	/* argument expressions */
     } callExp;
     struct {
-      struct absyn *type;	/* type */
+      Sym *name;		/* class name */
+      struct absyn *args;	/* args */
     } newExp;
+    struct {
+      struct absyn *type;	/* args */
+    } newArrayExp;
     struct {
       Sym *name;		/* the simple variable's name */
     } simpleVar;
@@ -314,6 +319,8 @@ Absyn *newVarExp(char *file, int line,
 Absyn *newCallExp(char *file, int line,
                   Sym *name, Absyn *rcvr, Absyn *args);
 Absyn *newNewExp(char *file, int line,
+                 Sym *name, Absyn *args);
+Absyn *newNewArrayExp(char *file, int line,
                  Absyn *type);
 Absyn *newSimpleVar(char *file, int line,
                     Sym *name);

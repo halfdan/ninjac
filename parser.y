@@ -621,28 +621,29 @@ primary_exp		: NIL
 			                    $1,
 			                    $5);
 			  }
-			| NEW LPAREN new_obj_spec RPAREN
-			  {
-			    $$ = newNewExp($1.file, $1.line, $3);
+			| NEW new_obj_spec
+			  {			    
+                            $$ = $2
 			  }
 			;
 
-new_obj_spec		: IDENT
+new_obj_spec		: IDENT LPAREN arg_list RPAREN
 			  {
-			    $$ = newSimpleTy($1.file, $1.line,
-			                     newSym($1.val));
+			    $$ = newNewExp($1.file, $1.line, newSym($1.val), $3)
 			  }
-			| IDENT LBRACK exp RBRACK more_dims
+			| IDENT LBRACK exp RBRACK more_dims LPAREN RPAREN
 			  {
 			    p = newArrayTy($2.file, $2.line,
 			                   $3, $5);
-			    $$ = p;
+
+                            $$ = newNewArrayExp($2.file, $2.line, p);
+			    
 			    while (p->u.arrayTy.baseType != NULL) {
 			      p = p->u.arrayTy.baseType;
 			    }
 			    p->u.arrayTy.baseType =
 			      newSimpleTy($1.file, $1.line,
-			                  newSym($1.val));
+			                  newSym($1.val));                            
 			  }
 			;
 
