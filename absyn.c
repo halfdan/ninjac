@@ -63,8 +63,8 @@ Absyn *newFieldDec(char *file, int line,
 
 
 Absyn *newMethodDec(char *file, int line,
-                    boolean publ, boolean stat, Sym *name, Absyn *retType,
-                    Absyn *params, Absyn *locals, Absyn *stms) {
+                    boolean publ, boolean stat, boolean isConstructor, Sym *name,
+                    Absyn *retType, Absyn *params, Absyn *locals, Absyn *stms) {
   Absyn *node;
 
   node = (Absyn *) allocate(sizeof(Absyn));
@@ -73,6 +73,7 @@ Absyn *newMethodDec(char *file, int line,
   node->line = line;
   node->u.methodDec.publ = publ;
   node->u.methodDec.stat = stat;
+  node->u.methodDec.isConstructor = isConstructor;
   node->u.methodDec.name = name;
   node->u.methodDec.retType = retType;
   node->u.methodDec.params = params;
@@ -464,20 +465,20 @@ Absyn *newCallExp(char *file, int line,
 
 
 Absyn *newNewExp(char *file, int line,
-                 Sym *name, Absyn *args) {
+                 Sym *type, Absyn *args) {
   Absyn *node;
 
   node = (Absyn *) allocate(sizeof(Absyn));
   node->type = ABSYN_NEWEXP;
   node->file = file;
   node->line = line;
-  node->u.newExp.name = name;
+  node->u.newExp.type = type;
   node->u.newExp.args = args;
   return node;
 }
 
 Absyn *newNewArrayExp(char *file, int line,
-                 Absyn *type) {
+                 Sym *type, Absyn *size, int dims) {
   Absyn *node;
 
   node = (Absyn *) allocate(sizeof(Absyn));
@@ -485,6 +486,8 @@ Absyn *newNewArrayExp(char *file, int line,
   node->file = file;
   node->line = line;
   node->u.newArrayExp.type = type;
+  node->u.newArrayExp.size = size;
+  node->u.newArrayExp.dims = dims;
   return node;
 }
 
@@ -833,6 +836,9 @@ static void showMethodDec(Absyn *node, int n) {
   sayBool(node->u.methodDec.stat);
   say(",\n");
   indent(n + 1);
+  sayBool(node->u.methodDec.isConstructor);
+  say(",\n");
+  indent(n + 1);
   say(symToString(node->u.methodDec.name));
   say(",\n");
   showNode(node->u.methodDec.retType, n + 1);
@@ -1171,7 +1177,7 @@ static void showNewExp(Absyn *node, int n) {
   indent(n);
   say("NewExp(\n");
   indent(n + 1);
-  say(symToString(node->u.newExp.name));
+  say(symToString(node->u.newExp.type));
   say(",\n");
   showNode(node->u.newExp.args, n + 1);
   say(")");
@@ -1180,7 +1186,13 @@ static void showNewExp(Absyn *node, int n) {
 static void showNewArrayExp(Absyn *node, int n) {
   indent(n);
   say("NewArrayExp(\n");
-  showNode(node->u.newArrayExp.type, n + 1);
+  indent(n + 1);
+  say(symToString(node->u.newArrayExp.type));
+  say(",\n");
+  indent(n + 1);
+  sayInt(node->u.newArrayExp.dims);
+  say(",\n");
+  showNode(node->u.newArrayExp.size, n + 1);
   say(")");
 }
 

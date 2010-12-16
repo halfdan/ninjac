@@ -94,6 +94,7 @@ typedef struct absyn {
     struct {
       boolean publ;		/* method visibility outside of class */
       boolean stat;		/* is this a class method? */
+      boolean isConstructor;    /* is this a constructor? */
       Sym *name;		/* name of the method */
       struct absyn *retType;	/* return type */
       struct absyn *params;	/* parameter variables */
@@ -206,11 +207,13 @@ typedef struct absyn {
       struct absyn *args;	/* argument expressions */
     } callExp;
     struct {
-      Sym *name;		/* class name */
+      Sym *type;		/* class name */
       struct absyn *args;	/* args */
     } newExp;
     struct {
-      struct absyn *type;	/* args */
+      Sym *type;		/* type name */
+      struct absyn *size;              /* size of first dimension */
+      int dims;                 /* number of dimensions*/
     } newArrayExp;
     struct {
       Sym *name;		/* the simple variable's name */
@@ -265,8 +268,8 @@ Absyn *newClassDec(char *file, int line,
 Absyn *newFieldDec(char *file, int line,
                    boolean publ, boolean stat, Sym *name, Absyn *type);
 Absyn *newMethodDec(char *file, int line,
-                    boolean publ, boolean stat, Sym *name, Absyn *retType,
-                    Absyn *params, Absyn *locals, Absyn *stms);
+                    boolean publ, boolean stat, boolean isConstructor, Sym *name,
+                    Absyn *retType, Absyn *params, Absyn *locals, Absyn *stms);
 Absyn *newVoidTy(char *file, int line);
 Absyn *newSimpleTy(char *file, int line,
                    Sym *name);
@@ -319,9 +322,9 @@ Absyn *newVarExp(char *file, int line,
 Absyn *newCallExp(char *file, int line,
                   Sym *name, Absyn *rcvr, Absyn *args);
 Absyn *newNewExp(char *file, int line,
-                 Sym *name, Absyn *args);
+                 Sym *type, Absyn *args);
 Absyn *newNewArrayExp(char *file, int line,
-                 Absyn *type);
+                 Sym *type, Absyn *size, int dims);
 Absyn *newSimpleVar(char *file, int line,
                     Sym *name);
 Absyn *newArrayVar(char *file, int line,

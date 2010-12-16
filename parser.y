@@ -16,6 +16,7 @@
 #include "parser.h"
 
 Absyn *fileTree;
+int arrayDims;
 
 static Absyn *p;
 
@@ -191,15 +192,23 @@ method_dec		: void IDENT LPAREN par_dec_list RPAREN
 			  LCURL var_dec_list stm_list RCURL
 			  {
 			    $$ = newMethodDec($2.file, $2.line,
-			                      FALSE, FALSE,
+			                      FALSE, FALSE, FALSE,
 			                      newSym($2.val),
 			                      $1, $4, $7, $8);
+			  }
+                        | IDENT LPAREN par_dec_list RPAREN
+			  LCURL var_dec_list stm_list RCURL
+			  {
+			    $$ = newMethodDec($1.file, $1.line,
+			                      FALSE, FALSE, TRUE,
+			                      newSym($1.val),
+			                      NULL, $3, $6, $7);
 			  }
 			| type IDENT LPAREN par_dec_list RPAREN
 			  LCURL var_dec_list stm_list RCURL
 			  {
 			    $$ = newMethodDec($2.file, $2.line,
-			                      FALSE, FALSE,
+			                      FALSE, FALSE, FALSE,
 			                      newSym($2.val),
 			                      $1, $4, $7, $8);
 			  }
@@ -631,19 +640,19 @@ new_obj_spec		: IDENT LPAREN arg_list RPAREN
 			  {
 			    $$ = newNewExp($1.file, $1.line, newSym($1.val), $3)
 			  }
-			| IDENT LBRACK exp RBRACK more_dims LPAREN RPAREN
+			| IDENT LBRACK exp RBRACK more_dims
 			  {
 			    p = newArrayTy($2.file, $2.line,
 			                   $3, $5);
 
-                            $$ = newNewArrayExp($2.file, $2.line, p);
-			    
+                            arrayDims = 1;
 			    while (p->u.arrayTy.baseType != NULL) {
 			      p = p->u.arrayTy.baseType;
+                              arrayDims++;
 			    }
-			    p->u.arrayTy.baseType =
-			      newSimpleTy($1.file, $1.line,
-			                  newSym($1.val));                            
+			    
+                            $$ = newNewArrayExp($2.file, $2.line,
+                                    newSym($1.val), $3, arrayDims);
 			  }
 			;
 
