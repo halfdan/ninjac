@@ -1,0 +1,10 @@
+//
+// one method with a 2-dim array
+//
+
+public class Main extends Object {
+  public static void main() {
+    local Object[][] b;
+    b = new Object[2][];
+  }
+}

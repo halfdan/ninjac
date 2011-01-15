@@ -1,0 +1,7 @@
+//
+// one field declaration
+//
+
+public class Main extends Object {
+  Integer[] a;
+}

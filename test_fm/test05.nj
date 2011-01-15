@@ -1,0 +1,9 @@
+//
+// two class declarations
+//
+
+public class Main extends Object {
+}
+
+class Main extends Object {
+}

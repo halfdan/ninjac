@@ -1,0 +1,94 @@
+#!/usr/bin/perl
+use strict;
+use warnings;
+use File::Copy;
+use File::Basename;
+use IO::Handle;
+
+############################################################
+## autotest.pl - for ninja oo compiler
+## =========================================================
+## author:                         Fabian Müller
+##
+## compiliert alle testfiles aus test_fm und vergleicht sie
+## erwartetem output
+############################################################
+
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+## global variables and constants
+#>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+my $author='Fabian Mueller';
+my $email='fabian.mueller@mni.fh-giessen.de';
+my $version='1.0';
+my $created='2011-01-15';
+
+my $pwd=`pwd`;                                         # current directory
+chomp($pwd);
+my $ref_dir=$pwd.'/test_fm';                          # location of all references (files and output)
+my @testfiles = glob($ref_dir.'/*.nj');
+
+sub Autotest_Main() {
+    # alle Testfiles compilieren
+    #use Data::Dumper;
+    #print Dumper(@testfiles);
+    foreach my $testfile (@testfiles) {
+#        print $testfile . "\n";
+        my $basename = basename($testfile, ".nj");
+        my $refoutput = "$ref_dir/$basename.ref";
+        my $tmpout = "$ref_dir/$basename.tmp";
+        my $output = "$ref_dir/$basename.out";
+        open my $oldout, ">&STDOUT" or die "Can't duplicate STDOUT: $!";
+#        close STDOUT;
+        
+        # redirect STDOUT
+        open(TMPOUT, ">", "$tmpout") or die("Konnte '$tmpout' nicht öffnen: $!");
+        STDOUT->fdopen(\*TMPOUT, 'w') or die("$!");
+
+        # compile testfile
+        system("./njc $testfile");
+
+        # restore STDOUT
+        STDOUT->fdopen(\*$oldout, 'w') or die("$!");
+        close TMPOUT;
+
+        # filter tmp-Output
+        open(TMPOUT, "<", $tmpout) or die("Konnte '$tmpout' nicht öffnen: $!");
+        open(OUTPUT, ">", $output) or die("Konnte '$output' nicht öffnen: $!");
+        foreach (<TMPOUT>) {
+            next if $_ =~ /Compiling/;
+            print OUTPUT $_;
+        }
+        close(TMPOUT);
+        close(OUTPUT);
+
+        # compare if diff was successfully
+        print "testing $basename...";
+        if ( 0 == system("diff $refoutput $output > /dev/null") ) {
+            print "WIN" . "\n";
+            unlink($tmpout);
+            unlink($output);
+        } else {
+            print "LOSE" . "\n";
+        }
+
+        # cleanup
+    }
+}
+
+Autotest_Main();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

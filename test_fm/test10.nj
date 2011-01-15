@@ -1,0 +1,10 @@
+//
+// one method declaration
+//
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+}

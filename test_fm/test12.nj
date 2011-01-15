@@ -1,0 +1,8 @@
+//
+// two field declarations
+//
+
+public class Main extends Object {
+  public static Object[][] foo;
+  static Main[][][][] blar;
+}

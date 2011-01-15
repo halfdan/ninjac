@@ -1,0 +1,9 @@
+//
+// two class declarations
+//
+
+class Aux extends Main {
+}
+
+public class Main extends Object {
+}

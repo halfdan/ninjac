@@ -1,0 +1,10 @@
+//
+// one method with 2 params declaration
+//
+
+public class Main extends Object {
+
+  public static void main(Object a, Object b) {
+  }
+
+}

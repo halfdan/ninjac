@@ -124,6 +124,8 @@ static void checkNode(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
+    Absyn *lhs, *rhs;
+    Type *lhs_t, *rhs_t;
 
 
     switch(node->type) {
@@ -144,6 +146,18 @@ static void checkNode(
         case ABSYN_COMPSTM:
             checkCompStm(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_ASSIGNSTM:
+            /* Bsp.: lhs = rhs */
+            lhs = node->u.assignStm.var;
+            rhs = node->u.assignStm.exp;
+            lhs_t = lookupTypeFromAbsyn(lhs, fileTable);
+            rhs_t = lookupTypeFromAbsyn(rhs, fileTable);
+            if ( ! isSameOrSubtypeOf(lhs_t, rhs_t) ) {
+                printf("assignment right-hand side cannot be converted to left-hand side in '%s' on line %d.\n",
+                        node->file,
+                        node->line);
+            }
             break;
         default: {
             error("Unknown node %d. Something went creepily wrong in the parser.", node->type);
@@ -602,15 +616,20 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     Table *classTable;
     Table **fileTables;
     Class *objectClass;
+    Class *integerClass;
     Entry *objectEntry;
+    Entry *integerEntry;
     
     int i;
 
     /* Initialize trivial Classes */
     globalTable = newTable(NULL);
     objectClass = newClass(TRUE, newSym("Object"), NULL, newTable(globalTable));
+    integerClass = newClass(TRUE, newSym("Integer"), NULL, newTable(globalTable));
     objectEntry = newClassEntry(objectClass);
+    integerEntry = newClassEntry(objectClass);
     enter(globalTable, objectClass->name, objectEntry);
+    enter(globalTable, integerClass->name, integerEntry);
 
     /* Allocate needed Table pointer space */
     fileTables = (Table **)allocate(numInFiles * sizeof(Table *));

@@ -1,0 +1,10 @@
+//
+// one method with a local variable and new expression
+//
+
+public class Main extends Object {
+  public static void main() {
+    local Main b;
+    b = new Object(a,b);
+  }
+}
