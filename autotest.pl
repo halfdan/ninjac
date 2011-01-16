@@ -57,6 +57,7 @@ sub Autotest_Main() {
         open(OUTPUT, ">", $output) or die("Konnte '$output' nicht öffnen: $!");
         foreach (<TMPOUT>) {
             next if $_ =~ /Compiling/;
+            $_ =~ s/(.*?)(\/.*\/)(.*)(\'.*)/$1$3$4/;
             print OUTPUT $_;
         }
         close(TMPOUT);
@@ -69,7 +70,7 @@ sub Autotest_Main() {
             unlink($tmpout);
             unlink($output);
         } else {
-            print "LOSE" . "\n";
+            print "FAIL" . "\n";
         }
 
         # cleanup
