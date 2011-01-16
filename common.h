@@ -14,5 +14,6 @@ typedef int boolean;
 
 #define MAX_INFILES	100
 
+extern char *mainClass;
 
 #endif /* _COMMON_H_ */

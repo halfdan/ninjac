@@ -19,7 +19,7 @@
 
 #define VERSION		7
 
-
+char *mainClass = "Main";
 
 static void version(char *myself) {
   /* show version and compilation date */
@@ -32,12 +32,13 @@ static void help(char *myself) {
   /* show some help how to use the program */
   printf("Usage: %s [options] <input file> [...]\n", myself);
   printf("Options:\n");
-  printf("  --output <file>    specify output file\n");
-  printf("  --tokens           show stream of tokens (no parsing)\n");
-  printf("  --absyn            show abstract syntax\n");
-  printf("  --tables           show symbol tables\n");
-  printf("  --version          show version and exit\n");
-  printf("  --help             show this help and exit\n");
+  printf("  --output <file>     specify output file\n");
+  printf("  --mainclass <class> specify main class\n");
+  printf("  --tokens            show stream of tokens (no parsing)\n");
+  printf("  --absyn             show abstract syntax\n");
+  printf("  --tables            show symbol tables\n");
+  printf("  --version           show version and exit\n");
+  printf("  --help              show this help and exit\n");
 }
 
 
@@ -52,7 +53,7 @@ int main(int argc, char *argv[]) {
   int token;
   Absyn *fileTrees[MAX_INFILES];
   FILE *outFile;
-  Table *globalTable;
+  Table **fileTables;
 
   /* analyze command line */
   numInFiles = 0;
@@ -68,6 +69,13 @@ int main(int argc, char *argv[]) {
           error("output file name missing");
         }
         outFileName = argv[i];
+      } else
+      if (strcmp(argv[i], "--mainclass") == 0) {
+        i++;
+        if (argv[i][0] == '-' || i == argc) {
+          error("main class missing or invalid");
+        }
+        mainClass = argv[i];
       } else
       if (strcmp(argv[i], "--tokens") == 0) {
         optionTokens = TRUE;
@@ -128,7 +136,7 @@ int main(int argc, char *argv[]) {
     }
   }
   /* do semantic analysis */
-  globalTable = check(fileTrees, numInFiles, optionTables);
+  fileTables = check(fileTrees, numInFiles, optionTables);
 
   /* generate code */
   /* done */

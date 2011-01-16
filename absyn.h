@@ -108,8 +108,11 @@ typedef struct absyn {
       Sym *name;		/* the simple type's name */
     } simpleTy;
     struct {
-      struct absyn *size;	/* size, only used in newExp */
-      struct absyn *baseType;	/* the array type's base type */
+      Sym *type;
+      int dims;
+      
+      /*struct absyn *size;	 size, only used in newExp */
+      /*struct absyn *baseType;	 the array type's base type */
     } arrayTy;
     struct {
       Sym *name;		/* the parameter's name */
@@ -212,7 +215,7 @@ typedef struct absyn {
     } newExp;
     struct {
       Sym *type;		/* type name */
-      struct absyn *size;              /* size of first dimension */
+      struct absyn *size;       /* size of first dimension */
       int dims;                 /* number of dimensions*/
     } newArrayExp;
     struct {
@@ -274,7 +277,7 @@ Absyn *newVoidTy(char *file, int line);
 Absyn *newSimpleTy(char *file, int line,
                    Sym *name);
 Absyn *newArrayTy(char *file, int line,
-                  Absyn *size, Absyn *baseType);
+                  Sym *type, int dims);
 Absyn *newParDec(char *file, int line,
                  Sym *name, Absyn *type);
 Absyn *newVarDec(char *file, int line,

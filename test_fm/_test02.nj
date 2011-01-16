@@ -1,5 +1,6 @@
 //
 // one class declaration
+// main method is missing
 //
 
 public class Main extends Object {

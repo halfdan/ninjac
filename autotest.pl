@@ -27,6 +27,8 @@ my $pwd=`pwd`;                                         # current directory
 chomp($pwd);
 my $ref_dir=$pwd.'/test_fm';                          # location of all references (files and output)
 my @testfiles = glob($ref_dir.'/*.nj');
+my $failed = 0;
+my $won = 0;
 
 sub Autotest_Main() {
     # alle Testfiles compilieren
@@ -55,10 +57,10 @@ sub Autotest_Main() {
         # filter tmp-Output
         open(TMPOUT, "<", $tmpout) or die("Konnte '$tmpout' nicht öffnen: $!");
         open(OUTPUT, ">", $output) or die("Konnte '$output' nicht öffnen: $!");
-        foreach (<TMPOUT>) {
-            next if $_ =~ /Compiling/;
-            $_ =~ s/(.*?)(\/.*\/)(.*)(\'.*)/$1$3$4/;
-            print OUTPUT $_;
+        foreach my $line (<TMPOUT>) {
+            next if $line =~ /Compiling/;
+            $line =~ s/(.*?)(\/.*\/)(.*)(\'.*)/$1$3$4/;
+            print OUTPUT $line;
         }
         close(TMPOUT);
         close(OUTPUT);
@@ -69,12 +71,15 @@ sub Autotest_Main() {
             print "WIN" . "\n";
             unlink($tmpout);
             unlink($output);
+            $won++;
         } else {
             print "FAIL" . "\n";
+            $failed++;
         }
-
-        # cleanup
     }
+    print "\n";
+    print "Tests passed: $won\n";
+    print "Tests failed: $failed\n";
 }
 
 Autotest_Main();

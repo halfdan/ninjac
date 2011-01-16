@@ -1,0 +1,8 @@
+//
+// one class declaration
+// main method return type is non-void
+//
+
+public class Main extends Object {
+    public static Integer main() {}
+}

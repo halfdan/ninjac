@@ -1,0 +1,8 @@
+//
+// one class declaration
+// main method is not static
+//
+
+public class Main extends Object {
+    public void main() {}
+}

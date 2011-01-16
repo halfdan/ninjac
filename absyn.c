@@ -108,15 +108,17 @@ Absyn *newSimpleTy(char *file, int line,
 
 
 Absyn *newArrayTy(char *file, int line,
-                  Absyn *size, Absyn *baseType) {
+                  Sym *type, int dims) {
   Absyn *node;
 
   node = (Absyn *) allocate(sizeof(Absyn));
   node->type = ABSYN_ARRAYTY;
   node->file = file;
   node->line = line;
-  node->u.arrayTy.size = size;
-  node->u.arrayTy.baseType = baseType;
+  node->u.arrayTy.type = type;
+  node->u.arrayTy.dims = dims;
+/*  node->u.arrayTy.size = size;*/
+/*  node->u.arrayTy.baseType = baseType;*/
   return node;
 }
 
@@ -869,16 +871,11 @@ static void showSimpleTy(Absyn *node, int n) {
 static void showArrayTy(Absyn *node, int n) {
   indent(n);
   say("ArrayTy(\n");
-  if (node->u.arrayTy.size == NULL) {
-    /* this is the normal case */
-    indent(n + 1);
-    say("<no size>");
-  } else {
-    /* this can only happen in newExp */
-    showNode(node->u.arrayTy.size, n + 1);
-  }
-  say(",\n");
-  showNode(node->u.arrayTy.baseType, n + 1);
+  indent(n);
+  say("Type: ");
+  sayString(symToString(node->u.arrayTy.type));
+  say("Dims: ");
+  sayInt(node->u.arrayTy.dims);
   say(")");
 }
 

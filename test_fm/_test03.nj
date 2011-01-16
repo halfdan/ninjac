@@ -1,0 +1,8 @@
+//
+// one class declaration
+// main method is not public
+//
+
+public class Main extends Object {
+    static void main() {}
+}

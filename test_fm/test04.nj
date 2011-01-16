@@ -6,4 +6,5 @@ class Aux extends Main {
 }
 
 public class Main extends Object {
+    public static void main(){}
 }

@@ -16,7 +16,7 @@
 #include "parser.h"
 
 Absyn *fileTree;
-int arrayDims;
+int arrayDims = 1;
 
 static Absyn *p;
 
@@ -227,15 +227,9 @@ type			: IDENT
 			  }
 			| IDENT LBRACK RBRACK more_dims
 			  {
-			    p = newArrayTy($2.file, $2.line,
-			                   NULL, $4);
-			    $$ = p;
-			    while (p->u.arrayTy.baseType != NULL) {
-			      p = p->u.arrayTy.baseType;
-			    }
-			    p->u.arrayTy.baseType =
-			      newSimpleTy($1.file, $1.line,
-			                  newSym($1.val));
+                            arrayDims = 1; /* reset array dimension counter */
+			    $$ = newArrayTy($2.file, $2.line,
+                                             newSym($1.val), arrayDims);
 			  }
 			;
 
@@ -245,8 +239,7 @@ more_dims		: /* empty */
 			  }
 			| LBRACK RBRACK more_dims
 			  {
-			    $$ = newArrayTy($1.file, $1.line,
-			                    NULL, $3);
+                            arrayDims++;
 			  }
 			;
 
@@ -642,17 +635,9 @@ new_obj_spec		: IDENT LPAREN arg_list RPAREN
 			  }
 			| IDENT LBRACK exp RBRACK more_dims
 			  {
-			    p = newArrayTy($2.file, $2.line,
-			                   $3, $5);
-
-                            arrayDims = 1;
-			    while (p->u.arrayTy.baseType != NULL) {
-			      p = p->u.arrayTy.baseType;
-                              arrayDims++;
-			    }
-			    
                             $$ = newNewArrayExp($2.file, $2.line,
                                     newSym($1.val), $3, arrayDims);
+                            arrayDims = 1; /* reset array dimension counter */
 			  }
 			;
 

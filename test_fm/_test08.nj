@@ -1,10 +1,11 @@
 //
 // two class declarations
+// global class redeclaration
 //
 
 public class Main extends Object {
     public static void main(){}
 }
 
-class Foo extends Object {
+public class Main extends Object {
 }

@@ -191,11 +191,21 @@ static void checkClassDec(
             /* Create new entry for file/globaltable */
             classEntry = newClassEntry(class);
             /* Add the entry to the fileTable */
-            enter(*fileTable, node->u.classDec.name, classEntry);
+            if ( NULL == enter(*fileTable, node->u.classDec.name, classEntry) ) {
+                error("local redeclaration of class '%s' in '%s' on line %d",
+                        symToString(node->u.classDec.name),
+                        node->file,
+                        node->line);
+            }
             /* ..and if it's public to the globalTable aswell */
             if(node->u.classDec.publ) {
-                enter(globalTable, node->u.classDec.name, classEntry);
-            }            
+                if ( NULL == enter(globalTable, node->u.classDec.name, classEntry) ) {
+                    error("global redeclaration of class '%s' in '%s' on line %d",
+                        symToString(node->u.classDec.name),
+                        node->file,
+                        node->line);
+                }
+            }
             break;
         case 1:
             /* Lookup current class entry, should never be NULL */
@@ -609,7 +619,7 @@ static void checkCompStm(
     }
 }
 
-Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
+Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* initialize tables and foobars */
     Table *globalTable;
     Table *fileTable;
@@ -619,6 +629,8 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     Class *integerClass;
     Entry *objectEntry;
     Entry *integerEntry;
+    Entry *mainClassEntry;
+    Entry *mainMethodEntry;
     
     int i;
 
@@ -670,13 +682,35 @@ Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
         exit(0);
     }
 
-    return fileTable;
+    mainClassEntry = lookup(globalTable, newSym("Main"), ENTRY_KIND_CLASS);
+
+    if ( NULL == mainClassEntry ) {
+        error("public class '%s' is missing.", mainClass);
+    } else {
+        mainMethodEntry = lookup(mainClassEntry->u.classEntry.class->mbrTable, newSym("main"), ENTRY_KIND_METHOD);
+        if ( NULL == mainMethodEntry ) {
+            error("public class '%s' does not contain a method 'main'.", mainClass);
+        } else {
+            if ( ! mainMethodEntry->u.methodEntry.isPublic ) {
+                error("method 'main' of public class '%s' is not public", mainClass);
+            }
+            if ( ! mainMethodEntry->u.methodEntry.isStatic ) {
+                error("method 'main' of public class '%s' is not static", mainClass);
+            }
+            if ( mainMethodEntry->u.methodEntry.retType->kind != TYPE_KIND_VOID ) {
+                error("method 'main' of public class '%s' must have return type 'void", mainClass);
+            }
+            if ( ! mainMethodEntry->u.methodEntry.paramTypes->isEmpty ) {
+                error("method 'main' of public class '%s' must not have any arguments", mainClass);
+            }
+        }
+    }
+
+    return fileTables;
 }
 
 static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
     Entry *classEntry;
-    Absyn *arrayNode;
-    int i;
 
     switch(node->type) {
         case ABSYN_SIMPLETY:
@@ -699,36 +733,25 @@ static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
             return newSimpleType(classEntry->u.classEntry.class);
             break;
         case ABSYN_ARRAYTY:
-
-            /* This loops through the whole array type syntax tree and counts
-             * its dimensions. At the end of the loop in
-             *  - i stands for the counted dimensions.
-             *  - arrayNode is the abstract syntax node of the simple type. */
-            for (   i = 1, arrayNode = node->u.arrayTy.baseType;
-                    arrayNode->type != ABSYN_SIMPLETY;
-                    i++, arrayNode = arrayNode->u.arrayTy.baseType
-                    )
-                ;
-
             /* Lookup the class entry of the type */
-            classEntry = lookup(*fileTable, arrayNode->u.simpleTy.name, ENTRY_KIND_CLASS);
+            classEntry = lookup(*fileTable, node->u.arrayTy.type, ENTRY_KIND_CLASS);
 
             /* Class does not exist */
             if (classEntry == NULL) {
                 error("Unknown identifier '%s' in file '%s' on line '%d'",
-                        arrayNode->u.simpleTy.name->string,
-                        arrayNode->file,
-                        arrayNode->line);
+                        node->u.arrayTy.type->string,
+                        node->file,
+                        node->line);
             }
 
             if (classEntry->kind != ENTRY_KIND_CLASS) {
                 error("Identifier '%s' is not a Class in file '%s' on line '%d'",
-                        arrayNode->u.simpleTy.name->string,
-                        arrayNode->file,
-                        arrayNode->line);
+                        node->u.arrayTy.type->string,
+                        node->file,
+                        node->line);
             }
 
-            return newArrayType(classEntry->u.classEntry.class, i);
+            return newArrayType(classEntry->u.classEntry.class, node->u.arrayTy.dims);
             break;
 
         case ABSYN_VOIDTY:
