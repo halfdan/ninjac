@@ -1,0 +1,19 @@
+//
+// parameter of overriding method cannot be converted
+//
+
+class Aux extends Main {
+  void x(B x, B y, B z) {
+  }
+}
+
+public class Main extends Object {
+  void x(B x, A y, B z) {
+  }
+}
+
+class B extends A {
+}
+
+class A extends Object {
+}

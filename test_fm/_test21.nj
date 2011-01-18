@@ -1,0 +1,13 @@
+//
+// overriding method changes visibility
+//
+
+public class Main extends Object {
+  public static Integer x() {
+  }
+}
+
+class Aux extends Main {
+  static Integer x() {
+  }
+}

@@ -1,0 +1,13 @@
+//
+// shadowing method changes visibility
+//
+
+public class Main extends Object {
+  static Integer x() {
+  }
+}
+
+class Aux extends Main {
+  public static Integer x() {
+  }
+}

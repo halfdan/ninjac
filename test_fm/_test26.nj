@@ -1,0 +1,19 @@
+//
+// overriding method has different number of parameters
+//
+
+class Aux extends Main {
+  B x(Integer x, Boolean y) {
+  }
+}
+
+public class Main extends Object {
+  A x(Integer x, Boolean y, Integer z) {
+  }
+}
+
+class B extends A {
+}
+
+class A extends Object {
+}

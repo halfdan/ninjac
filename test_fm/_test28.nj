@@ -1,0 +1,13 @@
+//
+// redeclaration of parameter
+//
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+  void f(Integer x, Integer x) {
+  }
+
+}

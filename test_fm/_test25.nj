@@ -1,0 +1,19 @@
+//
+// return type of overriding method cannot be converted
+//
+
+class Aux extends Main {
+  A x() {
+  }
+}
+
+public class Main extends Object {
+  B x() {
+  }
+}
+
+class B extends A {
+}
+
+class A extends Object {
+}

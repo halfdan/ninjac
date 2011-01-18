@@ -1,0 +1,14 @@
+//
+// redeclaration of parameter or local variable
+//
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+  void f(Integer x) {
+    local Integer x;
+  }
+
+}
