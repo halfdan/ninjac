@@ -4,6 +4,7 @@ use warnings;
 use File::Copy;
 use File::Basename;
 use IO::Handle;
+use Term::ANSIColor qw(:constants);
 
 ############################################################
 ## autotest.pl - for ninja oo compiler
@@ -66,14 +67,14 @@ sub Autotest_Main() {
         close(OUTPUT);
 
         # compare if diff was successfully
-        print "testing $basename...";
+        print "testing $basename...\t";
         if ( 0 == system("diff $refoutput $output > /dev/null") ) {
-            print "WIN" . "\n";
+            print "PASS" . "\n";
             unlink($tmpout);
             unlink($output);
             $won++;
         } else {
-            print "FAIL" . "\n";
+            print RED, "FAIL" . "\n", RESET;
             $failed++;
         }
     }
