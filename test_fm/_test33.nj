@@ -1,0 +1,21 @@
+//
+// assignment with implicit narrowing cast
+//
+
+class Aux1 extends Object {
+}
+
+class Aux2 extends Aux1 {
+}
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+  void f2(Aux1 a1) {
+    local Aux2 a2;
+    a2 = a1;
+  }
+
+}

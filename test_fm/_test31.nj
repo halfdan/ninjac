@@ -1,0 +1,11 @@
+//
+// unknown simple type
+//
+
+public class Main extends Object {
+
+  public static void Main() {
+    local Hugo h;
+  }
+
+}
