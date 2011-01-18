@@ -1,0 +1,14 @@
+//
+// method not found
+//
+
+public class Main extends Object {
+
+  void f() {
+    g();
+  }
+
+  public static void main() {
+  }
+
+}

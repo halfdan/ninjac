@@ -1,0 +1,21 @@
+//
+// method is not public
+//
+
+
+class Aux extends Object {
+
+  void f() {
+  }
+
+}
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Aux a;
+    a.f();
+  }
+
+}

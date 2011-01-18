@@ -1,0 +1,17 @@
+//
+// non-boolean test in while-statement
+//
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+  void f1(Boolean b) {
+    local Integer x;
+    while (1) {
+      x = 42;
+    }
+  }
+
+}

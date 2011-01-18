@@ -1,0 +1,11 @@
+//
+// nil does not have any methods
+//
+
+public class Main extends Object {
+
+  public static void main() {
+    nil.doIt();
+  }
+
+}

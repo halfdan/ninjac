@@ -1,0 +1,20 @@
+//
+// return expression has wrong type
+//
+
+class Aux1 extends Object {
+}
+
+class Aux2 extends Aux1 {
+}
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+  Aux2 f1(Aux1 a) {
+    return a;
+  }
+
+}

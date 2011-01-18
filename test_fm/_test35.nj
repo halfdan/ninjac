@@ -1,0 +1,19 @@
+//
+// non-boolean test in if-statement
+//
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+  void f1(Boolean b) {
+    local Integer x;
+    if (1) {
+      x = 42;
+    } else {
+      x = 43;
+    }
+  }
+
+}

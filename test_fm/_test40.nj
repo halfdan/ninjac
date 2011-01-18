@@ -1,0 +1,16 @@
+//
+// return statement must not return a value
+//
+
+public class Main extends Object {
+
+  public static void main() {
+  }
+
+  void f(Boolean b) {
+    if (b) {
+      return 42;
+    }
+  }
+
+}
