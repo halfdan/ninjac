@@ -1,7 +1,8 @@
 //
-// one field declaration
+// one array field declaration
 //
 
 public class Main extends Object {
-  Integer[] a;
+    public static void main(){}
+    Integer[] a;
 }

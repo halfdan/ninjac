@@ -6,7 +6,7 @@ public class Main extends Object {
 
   public static Object foo;
 
-  public static void main(Object a, Object b) {
+  public static void main() {
   }
 
   public Object foo(Object a, Main b) {

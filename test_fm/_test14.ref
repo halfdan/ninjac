@@ -1,0 +1,1 @@
+Error: redeclaration of 'x' (defined in a superclass of 'Subclass') as field in file '_test14.nj' on line 12

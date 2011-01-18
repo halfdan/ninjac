@@ -1,0 +1,11 @@
+//
+// field declaration
+// field redeclaration in same class
+//
+
+public class Main extends Object {
+    Integer x;
+    Integer x;
+    public static void main() {}
+}
+

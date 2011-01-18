@@ -1,1 +1,1 @@
-Superclass 'Parent' not found in '_test11.nj' on line 13.
+Error: unknown superclass 'Parent' in '_test11.nj' on line 13

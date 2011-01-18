@@ -3,6 +3,7 @@
 //
 
 public class Main extends Object {
+  public static void main(){}
   public static Object[][] foo;
   static Main[][][][] blar;
 }

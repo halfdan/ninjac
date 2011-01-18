@@ -1,15 +1,12 @@
 //
-// two method with 2 params and 2 field declarations
+// two method with 2 params and field declaration
+// method and field are named identically
 //
 
 public class Main extends Object {
 
   public static Object foo;
-
-  public static void main(Object a, Object b) {
-  }
-
-  static Object foo(Object a, Object b) {
-  }
-
+  public static void main() {}
+  static Object foo(Object a, Object b) {}
 }
+

@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
@@ -180,6 +181,7 @@ static void checkClassDec(
     Absyn *memberDec;
     Entry* classEntry;
     Entry* superClassEntry;
+    char * superClassName;
     Class* class;
 
     switch(pass) {
@@ -212,17 +214,27 @@ static void checkClassDec(
             classEntry = lookup(*fileTable, node->u.classDec.name, ENTRY_KIND_CLASS);
             /* Lookup entry of the supposed superclass */
             superClassEntry = lookup(*fileTable, node->u.classDec.superClass, ENTRY_KIND_CLASS);
+
             /* Did we find the superclass? */
             if(superClassEntry == NULL) {
-                printf("Superclass '%s' not found in '%s' on line %d.\n",
+                error("unknown superclass '%s' in '%s' on line %d",
                         node->u.classDec.superClass->string,
                         node->file,
                         node->line);
-            }           
+            }
+
+            /* if the Superclass is a primitive class */
+            superClassName = symToString(superClassEntry->u.classEntry.class->name);
+            if (strcmp(superClassName, "Integer") == 0 ) {
+                error("primitive class '%s' cannot be extended in '%s' on '%d",
+                        superClassName,
+                        node->file,
+                        node->line);
+            }
+
             /* Set the superclass */
-            else {
-                classEntry->u.classEntry.class->superClass = superClassEntry->u.classEntry.class;
-            }            
+            classEntry->u.classEntry.class->superClass = superClassEntry->u.classEntry.class;
+
             break;
         case 2:
             /* Lookup current class entry */
@@ -287,17 +299,31 @@ static void checkFieldDec(
         case 1:           
             break;
         case 2:
-            /* Determine the type of the field */
-            fieldType = lookupTypeFromAbsyn(node->u.fieldDec.type, fileTable);
-            /* Create new variable entry, not local */
-            fieldEntry = newVariableEntry(FALSE, node->u.fieldDec.publ, node->u.fieldDec.stat, fieldType);
-            /* Add the entry to the fileTable */
-            if(NULL == enter(classTable, node->u.fieldDec.name, fieldEntry)) {
-                error("Field already exists in class '%s' in file '%s' on line %d.",
+            /* if not defined in of of the superclasses */
+            fieldEntry = lookupMember(actClass->superClass, node->u.fieldDec.name, ENTRY_KIND_VARIABLE);
+            if(fieldEntry != NULL) {
+                error("redeclaration of '%s' (defined in a superclass of '%s') as field in file '%s' on line %d",
+                        node->u.fieldDec.name->string,
                         actClass->name->string,
                         node->file,
                         node->line);
             }
+
+            /* Determine the type of the field */
+            fieldType = lookupTypeFromAbsyn(node->u.fieldDec.type, fileTable);
+            /* Create new variable entry, not local */
+            fieldEntry = newVariableEntry(FALSE, node->u.fieldDec.publ, node->u.fieldDec.stat, fieldType);
+
+
+            /* Add the entry to the fileTable */
+            if(NULL == enter(classTable, node->u.fieldDec.name, fieldEntry)) {
+                error("redeclaration of '%s' (defined in class '%s') as field in file '%s' on line %d",
+                        node->u.fieldDec.name->string,
+                        actClass->name->string,
+                        node->file,
+                        node->line);
+            }
+
             break;
         case 3:
             break;
@@ -636,11 +662,13 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
 
     /* Initialize trivial Classes */
     globalTable = newTable(NULL);
+
     objectClass = newClass(TRUE, newSym("Object"), NULL, newTable(globalTable));
-    integerClass = newClass(TRUE, newSym("Integer"), NULL, newTable(globalTable));
     objectEntry = newClassEntry(objectClass);
-    integerEntry = newClassEntry(objectClass);
     enter(globalTable, objectClass->name, objectEntry);
+
+    integerClass = newClass(TRUE, newSym("Integer"), NULL, newTable(globalTable));
+    integerEntry = newClassEntry(integerClass);
     enter(globalTable, integerClass->name, integerEntry);
 
     /* Allocate needed Table pointer space */

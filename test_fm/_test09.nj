@@ -1,0 +1,9 @@
+//
+// class declarations
+// unknown superclass
+//
+
+public class Main extends Superclass {
+    public static void main(){}
+}
+

@@ -1,0 +1,8 @@
+//
+// class declaration
+// invalid use of primitive class as superclass
+//
+
+public class Main extends Integer {
+    public static void main() {}
+}

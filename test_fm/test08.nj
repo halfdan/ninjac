@@ -1,7 +1,8 @@
 //
-// one field declaration
+// one static array field declaration
 //
 
 public class Main extends Object {
-  static Integer[][] b;
+    public static void main(){}
+    static Integer[][] b;
 }

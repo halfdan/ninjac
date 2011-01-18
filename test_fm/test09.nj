@@ -3,8 +3,9 @@
 //
 
 public class Main extends Object {
-  Integer[] a;
-  public Integer[][] b;
-  static Integer[][][] c;
-  public static Integer[][][][] d;
+    public static void main(){}
+    Integer[] a;
+    public Integer[][] b;
+    static Integer[][][] c;
+    public static Integer[][][][] d;
 }
