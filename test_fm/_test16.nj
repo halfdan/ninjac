@@ -1,14 +1,13 @@
 //
-// method declaration in non-public class
-// method redeclaration in superclass
+// name already used for a static method
 //
 
 public class Main extends Object {
-    public static void main() {}
-    public Integer method;
+  static Integer x() {
+  }
 }
 
-class Subclass extends Main {
-    Integer x;
-    public void method() {}
+class Aux extends Main {
+  Integer x() {
+  }
 }
