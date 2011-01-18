@@ -1,0 +1,13 @@
+//
+// name already used for a static method
+//
+
+class Aux extends Main {
+  Integer x() {
+  }
+}
+
+public class Main extends Object {
+  static Integer x() {
+  }
+}

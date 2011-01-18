@@ -1,1 +1,1 @@
-Error: redeclaration of 'x' (defined in class 'Main') as field in file '_test13.nj' on line 8
+Error: redeclaration of field 'x' (defined in class 'Main') in file '_test13.nj' on line 8
