@@ -1,0 +1,13 @@
+//
+// field declaration in non-public class
+// method redeclaration in superclass
+//
+
+public class Main extends Object {
+    public static void main() {}
+    public void x() {}
+}
+
+class Subclass extends Main {
+    Integer x;
+}

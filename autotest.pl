@@ -69,7 +69,7 @@ sub Autotest_Main() {
         # compare if diff was successfully
         print "testing $basename...\t";
         if ( 0 == system("diff $refoutput $output > /dev/null") ) {
-            print "PASS" . "\n";
+            print GREEN, "PASS" . "\n", RESET;
             unlink($tmpout);
             unlink($output);
             $won++;

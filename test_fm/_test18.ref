@@ -1,1 +1,1 @@
-Error: redeclaration of static superclass method 'x' as non-static in '_test18.nj' on line 6
+Error: redeclaration of static superclass method 'x' (defined in a superclass of 'Aux') as non-static in '_test18.nj' on line 6

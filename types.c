@@ -193,3 +193,38 @@ void showTypeList(TypeList *typeList) {
   }
   printf(")");
 }
+
+boolean isParamTypeListLengthEqual(TypeList *parList1, TypeList *parList2) {
+
+    TypeList *tmpList1, *tmpList2;
+
+    /* Loop over the two lists and compare their types*/
+    for(
+            tmpList1 = parList1,
+            tmpList2 = parList2;
+            !tmpList1->isEmpty && !tmpList2->isEmpty;
+            tmpList1 = tmpList1->next,
+            tmpList2 = tmpList2->next
+        ) {
+    }; /* don't actually do anything */
+
+    /* If one of the elements is not empty we have
+     * parameter lists of different length
+     */
+    if(!tmpList1->isEmpty || !tmpList2->isEmpty) {
+        return FALSE;
+    }
+    /* ToDo: Could check which list is longer/shorter */
+
+    return TRUE;
+}
+
+int getLength(TypeList* List) {
+    TypeList *tmp;
+    int i;
+    
+    for (i = 0,tmp = List;!tmp -> isEmpty;tmp = tmp->next,i++)
+        ;
+
+    return i;
+}

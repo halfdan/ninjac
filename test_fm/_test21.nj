@@ -1,5 +1,5 @@
 //
-// overriding method changes visibility
+// shadowing method changes visibility
 //
 
 public class Main extends Object {

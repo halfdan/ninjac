@@ -65,6 +65,8 @@ typedef struct typeList {
 TypeList *emptyTypeList(void);
 TypeList *newTypeList(Type *type, TypeList *next);
 void showTypeList(TypeList *typeList);
+boolean isParamTypeListLengthEqual(TypeList *parList1, TypeList *parList2);
+int getLength(TypeList* List);
 
 
 #endif /* _TYPES_H_ */

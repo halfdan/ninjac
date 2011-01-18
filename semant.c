@@ -113,7 +113,6 @@ static void checkCompStm(
         Type *returnType,
         int pass);
 static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
-static boolean isParamTypeListEqual(TypeList *parList1, TypeList *parList2);
 
 static void checkNode(
         Absyn *node,
@@ -291,6 +290,7 @@ static void checkFieldDec(
         int pass) {
 
     Entry* fieldEntry;
+    Entry* varTmpEntry;
     Type *fieldType;
 
     switch(pass) {
@@ -299,10 +299,10 @@ static void checkFieldDec(
         case 1:           
             break;
         case 2:
-            /* if not defined in of of the superclasses */
-            fieldEntry = lookupMember(actClass->superClass, node->u.fieldDec.name, ENTRY_KIND_VARIABLE);
-            if(fieldEntry != NULL) {
-                error("redeclaration of '%s' (defined in a superclass of '%s') as field in file '%s' on line %d",
+            /* if defined in one of superclasses either as method or field */
+            varTmpEntry = lookupMember(actClass->superClass, node->u.fieldDec.name, ENTRY_KIND_VARIABLE);
+            if(varTmpEntry != NULL) {
+                error("redeclaration of field '%s' (defined in a superclass of '%s') in file '%s' on line %d",
                         node->u.fieldDec.name->string,
                         actClass->name->string,
                         node->file,
@@ -317,7 +317,7 @@ static void checkFieldDec(
 
             /* Add the entry to the fileTable */
             if(NULL == enter(classTable, node->u.fieldDec.name, fieldEntry)) {
-                error("redeclaration of '%s' (defined in class '%s') as field in file '%s' on line %d",
+                error("redeclaration of field '%s' (defined in class '%s') in file '%s' on line %d",
                         node->u.fieldDec.name->string,
                         actClass->name->string,
                         node->file,
@@ -345,16 +345,19 @@ static void checkMethodDec(
         int pass) {
 
     Entry* methodEntry;
+    Entry* superClassMethodEntry;
     Entry* tmpEntry;
     Type *tmpType;
     TypeList *paramTypes;
+    TypeList *methodParamsList, *superClassParamsList;
     Absyn *localList;
     Absyn *localDec;
     Absyn *stmtList;
     Absyn *stmtDec;
     Absyn *paramList;
     Absyn *paramDec;
-
+    int i;
+    
     switch(pass) {
         case 0:
             break;
@@ -424,17 +427,76 @@ static void checkMethodDec(
             /* Fetch method entry from class table */
             methodEntry = lookup(classTable, node->u.methodDec.name, ENTRY_KIND_METHOD);
             /* Does the method already exist in the super class? */
-            tmpEntry = lookupMember(actClass->superClass, node->u.methodDec.name, ENTRY_KIND_METHOD);
-            if(tmpEntry != NULL) {
-                /* Wenn die Methode public ist, nicht static und den gleichen returnType hat.. */
-                if(!(tmpEntry->u.methodEntry.isPublic &&
-                        /* Return type can be equal or more specific */
-                        isSameOrSubtypeOf(methodEntry->u.methodEntry.retType, tmpEntry->u.methodEntry.retType) &&
-                        /* Param types of current class can be equal or more generalized */
-                        isParamTypeListEqual(tmpEntry->u.methodEntry.paramTypes, methodEntry->u.methodEntry.paramTypes))
-                        ) {
+            superClassMethodEntry = lookupMember(actClass->superClass, node->u.methodDec.name, ENTRY_KIND_METHOD);
+            if(superClassMethodEntry != NULL) {
+                /* Redeclaration errors */
+                if (superClassMethodEntry->u.methodEntry.isStatic) {
+                    if (superClassMethodEntry->u.methodEntry.isPublic != node->u.methodDec.publ) {
+                        error("shadowing method '%s' changes visibility in '%s' on line %d",
+                                node->u.methodDec.name->string,
+                                node->file,
+                                node->line);
+                    }
 
-                    error("Method already exists in superclass but declarations don't match.");
+                    if (!methodEntry->u.methodEntry.isStatic) {
+                        error("redeclaration of static superclass method '%s' (defined in a superclass of '%s') as non-static in '%s' on line %d",
+                                node->u.methodDec.name->string,
+                                actClass->name->string,
+                                node->file,
+                                node->line);
+                    }
+                } else {
+                    if (superClassMethodEntry->u.methodEntry.isPublic != node->u.methodDec.publ) {
+                        error("overriding method '%s' changes visibility in '%s' on line %d",
+                                node->u.methodDec.name->string,
+                                node->file,
+                                node->line);
+                    }
+                    if (methodEntry->u.methodEntry.isStatic) {
+                        error("redeclaration of non-static superclass method '%s' (defined in a superclass of '%s') as static in '%s' on line %d",
+                                node->u.methodDec.name->string,
+                                actClass->name->string,
+                                node->file,
+                                node->line);
+                    }
+                    if ( ! isSameOrSubtypeOf(methodEntry->u.methodEntry.retType, superClassMethodEntry->u.methodEntry.retType)) {
+                        error("return type of overriding method '%s' cannot be converted in '%s' on line %d",
+                                node->u.methodDec.name->string,
+                                node->file,
+                                node->line);
+                    }
+
+
+                    /* check for ParamLists */
+                    methodParamsList = methodEntry->u.methodEntry.paramTypes;
+                    superClassParamsList = superClassMethodEntry->u.methodEntry.paramTypes;
+                    
+                    if ( ! isParamTypeListLengthEqual(methodParamsList, superClassParamsList) ) {
+                        error("overriding method '%s' has different number of parameters in '%s' on line %d",
+                                node->u.methodDec.name->string,
+                                node->file,
+                                node->line);
+                    } else {
+
+                        /* Loop over the two lists and compare their types*/
+                        for(
+                                i=0,
+                                methodParamsList = methodEntry->u.methodEntry.paramTypes,
+                                superClassParamsList = superClassMethodEntry->u.methodEntry.paramTypes;
+                                !methodParamsList->isEmpty && !superClassParamsList->isEmpty;
+                                i++,
+                                methodParamsList = methodParamsList->next,
+                                superClassParamsList = superClassParamsList->next
+                            ) {
+                            if(!isSameOrSubtypeOf(superClassParamsList->type, methodParamsList->type)) {
+                                error("type of parameter #%d of overriding method '%s' cannot be converted in '%s' on line %d",
+                                        getLength(methodEntry->u.methodEntry.paramTypes) - i,
+                                        node->u.methodDec.name->string,
+                                        node->file,
+                                        node->line);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -653,8 +715,10 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     Table **fileTables;
     Class *objectClass;
     Class *integerClass;
+    Class *booleanClass;
     Entry *objectEntry;
     Entry *integerEntry;
+    Entry *booleanEntry;
     Entry *mainClassEntry;
     Entry *mainMethodEntry;
     
@@ -670,6 +734,10 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     integerClass = newClass(TRUE, newSym("Integer"), NULL, newTable(globalTable));
     integerEntry = newClassEntry(integerClass);
     enter(globalTable, integerClass->name, integerEntry);
+
+    booleanClass = newClass(TRUE, newSym("Boolean"), NULL, newTable(globalTable));
+    booleanEntry = newClassEntry(booleanClass);
+    enter(globalTable, booleanClass->name, booleanEntry);
 
     /* Allocate needed Table pointer space */
     fileTables = (Table **)allocate(numInFiles * sizeof(Table *));
@@ -790,30 +858,3 @@ static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable) {
     }
 }
 
-static boolean isParamTypeListEqual(TypeList *parList1, TypeList *parList2) {
-
-    TypeList *tmpList1, *tmpList2;
-
-    /* Loop over the two lists and compare their types*/
-    for(
-            tmpList1 = parList1,
-            tmpList2 = parList2;
-            !tmpList1->isEmpty && !tmpList2->isEmpty;
-            tmpList1 = tmpList1->next,
-            tmpList2 = tmpList2->next
-        ) {
-        if(!isSameOrSubtypeOf(tmpList1->type, tmpList2->type)) {
-            return FALSE;
-        }
-    }
-
-    /* If one of the elements is not empty we have
-     * parameter lists of different length
-     */
-    if(!tmpList1->isEmpty || !tmpList2->isEmpty) {
-        return FALSE;
-    }
-    /* ToDo: Could check which list is longer/shorter */
-
-    return TRUE;
-}
