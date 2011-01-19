@@ -546,7 +546,7 @@ static void checkParamDec(
             /* Add the entry to the localTable */
             if(NULL == enter(localTable, node->u.parDec.name, variableEntry)) {
                 /* Multiple definitions of variables are not allowed  */
-                error("Variable '%s' already exists in method in file '%s' on line %d.",
+                error("redeclaration of parameter '%s' in '%s' on line %d",
                         node->u.parDec.name->string,
                         node->file,
                         node->line);
@@ -587,7 +587,7 @@ static void checkVarDec(
             /* Add the entry to the localTable */
             if(NULL == enter(localTable, node->u.varDec.name, variableEntry)) {
                 /* Multiple definitions of variables are not allowed  */
-                error("Variable '%s' already exists in method in file '%s' on line %d.",
+                error("redeclaration of parameter or local variable '%s' in '%s' on line %d",
                         node->u.varDec.name->string,
                         node->file,
                         node->line);
