@@ -1,0 +1,24 @@
+//
+// method called with an incompatible argument type
+//
+
+
+class Aux1 extends Object {
+}
+
+
+class Aux2 extends Aux1 {
+}
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Aux1 a;
+    Main.f(a);
+  }
+
+  static void f(Aux2 x) {
+  }
+
+}

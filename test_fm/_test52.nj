@@ -1,0 +1,13 @@
+//
+// method length() for array called with an argument
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Integer[] a;
+    a.length(42);
+  }
+
+}

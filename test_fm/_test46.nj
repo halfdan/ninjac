@@ -1,0 +1,20 @@
+//
+// non-static method called with a class as receiver
+//
+
+
+class Aux extends Object {
+
+  public void f() {
+  }
+
+}
+
+
+public class Main extends Object {
+
+  public static void main() {
+    Aux.f();
+  }
+
+}

@@ -1,0 +1,13 @@
+//
+// method other than length() called with array as receiver
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Integer[] a;
+    a.f();
+  }
+
+}

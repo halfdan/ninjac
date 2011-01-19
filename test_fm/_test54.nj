@@ -1,0 +1,13 @@
+//
+// right operand not boolean
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Boolean x;
+    x = true || 1;
+  }
+
+}

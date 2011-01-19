@@ -1,0 +1,21 @@
+//
+// static method called with an instance of a class as receiver
+//
+
+
+class Aux extends Object {
+
+  public static void f() {
+  }
+
+}
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Aux a;
+    a.f();
+  }
+
+}
