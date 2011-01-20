@@ -112,6 +112,37 @@ static void checkCompStm(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkAssignStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkVarExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkSimpleVar(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+
 static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
 
 static void checkNode(
@@ -124,9 +155,6 @@ static void checkNode(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
-    Absyn *lhs, *rhs;
-    Type *lhs_t, *rhs_t;
-
 
     switch(node->type) {
         case ABSYN_FILE:
@@ -148,16 +176,12 @@ static void checkNode(
                     globalTable, breakAllowed, returnType, pass);
             break;
         case ABSYN_ASSIGNSTM:
-            /* Bsp.: lhs = rhs */
-            lhs = node->u.assignStm.var;
-            rhs = node->u.assignStm.exp;
-            lhs_t = lookupTypeFromAbsyn(lhs, fileTable);
-            rhs_t = lookupTypeFromAbsyn(rhs, fileTable);
-            if ( ! isSameOrSubtypeOf(lhs_t, rhs_t) ) {
-                printf("assignment right-hand side cannot be converted to left-hand side in '%s' on line %d.\n",
-                        node->file,
-                        node->line);
-            }
+            checkAssignStm(node, fileTable, localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_VAREXP:
+            checkVarExp(node, fileTable, localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
             break;
         default: {
             error("Unknown node %d. Something went creepily wrong in the parser.", node->type);
@@ -706,6 +730,107 @@ static void checkCompStm(
         }
     }
 }
+
+static void checkAssignStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Absyn *lhs, *rhs;
+    Type *lhs_t, *rhs_t;
+
+    switch(pass) {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            /* Bsp.: lhs = rhs ; */
+            /* lhs ist immer varExp */
+            checkNode(node->u.assignStm.var, fileTable, localTable, actClass,
+                    classTable, globalTable, breakAllowed, lhs_t, pass);
+            /* rhs ist irgendeine Exp */
+            checkNode(node->u.assignStm.exp, fileTable, localTable, actClass,
+                    classTable, globalTable, breakAllowed, rhs_t, pass);
+
+            if ( ! isSameOrSubtypeOf(rhs_t, lhs_t) ) {
+                printf("assignment right-hand side cannot be converted to left-hand side in '%s' on line %d.\n",
+                        node->file,
+                        node->line);
+            }
+            /* ToDo */
+            break;
+        case 3:
+            break;
+        default:
+            break;
+    }
+}
+
+static void checkVarExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    switch(pass) {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            switch(node->u.varExp.var->type) {
+                case ABSYN_SIMPLEVAR:
+                    checkSimpleVar(node, fileTable,localTable, actClass, classTable,
+                            globalTable, breakAllowed, returnType, pass);
+                    break;
+                default:
+                    error("You found a varExp that is not implemented!");
+                    break;
+            }
+            break;
+        case 3:
+            break;
+        default:
+            break;
+    }
+}
+
+
+static void checkSimpleVar(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    switch(pass) {
+        case 0:
+            break;
+        case 1:
+            break;
+        case 2:
+            break;
+        case 3:
+            break;
+        default:
+            break;
+    }
+}
+
 
 Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* initialize tables and foobars */
