@@ -218,6 +218,36 @@ static void checkRetExpStm(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkCallStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkBinOpExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkNilExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 static void checkIntExp(
         Absyn *node,
         Table **fileTable,
@@ -238,7 +268,47 @@ static void checkBoolExp(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkCharExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkSelfExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkNilExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 static void checkNewExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkCallExp(
         Absyn *node,
         Table **fileTable,
         Table *localTable,
@@ -321,6 +391,18 @@ static void checkNode(
             checkRetExpStm(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
+        case ABSYN_CALLSTM:
+            checkCallStm(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_BINOPEXP:
+            checkBinOpExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_NILEXP:
+            checkNilExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
         case ABSYN_INTEXP:
             checkIntExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
@@ -329,8 +411,20 @@ static void checkNode(
             checkBoolExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
+        case ABSYN_CHAREXP:
+            checkCharExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_SELFEXP:
+            checkSelfExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
         case ABSYN_NEWEXP:
             checkNewExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_CALLEXP:
+            checkCallExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
         default: {
@@ -384,9 +478,9 @@ static void checkClassDec(
             break;
         case 1:
             /* Lookup current class entry, should never be NULL */
-            classEntry = lookup(*fileTable, node->u.classDec.name, ENTRY_KIND_CLASS);
+            classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             /* Lookup entry of the supposed superclass */
-            superClassEntry = lookup(*fileTable, node->u.classDec.superClass, ENTRY_KIND_CLASS);
+            superClassEntry = lookupClass(fileTable, globalTable, node->u.classDec.superClass);
 
             /* Did we find the superclass? */
             if(superClassEntry == NULL) {
@@ -411,7 +505,7 @@ static void checkClassDec(
             break;
         case 2:
             /* Lookup current class entry */
-            classEntry = lookup(*fileTable, node->u.classDec.name, ENTRY_KIND_CLASS);
+            classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             memberList = node->u.classDec.members;
             /* If memberlist isn't empty */
             if (!memberList->u.mbrList.isEmpty) {
@@ -429,7 +523,7 @@ static void checkClassDec(
             break;
         case 3:
             /* Lookup current class entry */
-            classEntry = lookup(*fileTable, node->u.classDec.name, ENTRY_KIND_CLASS);
+            classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             memberList = node->u.classDec.members;
             /* If memberlist isn't empty */
             if (!memberList->u.mbrList.isEmpty) {
@@ -977,14 +1071,17 @@ static void checkSimpleVar(
 
     /* lookup the name of the simplevar and save its type */
     varEntry = lookup(localTable, node->u.simpleVar.name, ENTRY_KIND_VARIABLE);
-    if ( varEntry == NULL ) {
-        /* this should never happen (hopefully) */
-        error("error in checkSimpleVar pass %d!", pass);
-    }
+    if ( ! (varEntry == NULL) ) {
+        *returnType = *(varEntry->u.variableEntry.type);
+    } else {
+        varEntry = lookupClass(fileTable, globalTable, node->u.simpleVar.name);
 
-    /* this saves the type in the space which was allocated by one of the
-     * calling functions */
-    *returnType = *(varEntry->u.variableEntry.type);
+        if (varEntry == NULL) {
+            error("error in checkSimpleVar!! this should never happen!");
+        }
+        
+        *returnType = *(newSimpleType(varEntry->u.classEntry.class));
+    }
 }
 
 static void checkIfStm1(
@@ -1164,6 +1261,12 @@ static void checkRetExpStm(
         Type *returnType,
         int pass){
 
+    Type *actMethodRetType = actMethod->u.methodEntry.retType;
+    Type *retExpStmRetType = allocate(sizeof(Type));
+
+    checkNode(node->u.retExpStm.exp, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, retExpStmRetType, pass);
+
     
     if (actMethod->u.methodEntry.retType->kind == TYPE_KIND_VOID) {
         error("return statement must not return a value in '%s' on line %d",
@@ -1171,16 +1274,354 @@ static void checkRetExpStm(
                 node->line);
     }
 
-    /* ich denke das brauchen wir später
-    Type *actMethodRetType = actMethod->u.methodEntry.retType;
-    Type *retExpStmRetType = lookupTypeFromAbsyn(chenode->u.retExpStm.exp, globalTable);
-
-    if (isSameOrSubtypeOf(retExpStmRetType, actMethodRetType)) {
-        error("return statement must return a value in '%s' on line %d",
+    /* return expression must be same or subtype of function return type
+     * because expressions expecting an object A can only be served with an A
+     * or a Subclass of A */
+    if ( ! isSameOrSubtypeOf( retExpStmRetType, actMethodRetType)) {
+        error("return type does not match method declaration in '%s' on line %d",
                 node->file,
                 node->line);
     }
-    */
+
+    free(retExpStmRetType);
+}
+
+
+static void checkCallStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    /*
+     * internals of callstm
+     * node->u.callStm.args
+     * node->u.callStm.name
+     * node->u.callStm.rcvr
+     */
+
+    Type *rcvrType = allocate(sizeof(Type));
+    Absyn *rcvrNode = node->u.callStm.rcvr;
+    Entry *methodEntry;
+    Entry *tmpEntry;
+    int i;
+    TypeList *paramList;
+    TypeList *argList;
+    Absyn *args;
+    Type *argType = allocate(sizeof(Type));
+    Type *paramType;
+
+    checkNode(rcvrNode, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, rcvrType, pass);
+
+    if (rcvrType->kind == TYPE_KIND_VOID) {
+        error("'void' does not have any methods in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+    if (rcvrType->kind == TYPE_KIND_NIL) {
+        error("'nil' does not have any methods in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+    /* check if the receiver is an arrayVar
+     * and if another method then 'length()' is called
+     * then the method cannot be called */
+    if ( rcvrNode->type == ABSYN_VAREXP ) {
+        if (rcvrNode->u.varExp.var->type == ABSYN_SIMPLEVAR) {
+            tmpEntry = lookup(localTable, rcvrNode->u.varExp.var->u.simpleVar.name, ENTRY_KIND_VARIABLE);
+
+            if (tmpEntry != NULL) {
+                if (tmpEntry->u.variableEntry.type->kind == TYPE_KIND_ARRAY) {
+                    if (strcmp("length", node->u.callStm.name->string) != 0) {
+                        error("arrays do not have any methods other than 'length' in '%s' on line %d",
+                                node->file,
+                                node->line);
+                    } else {
+                        if (!node->u.callStm.args->u.expList.isEmpty) {
+                            error("call to method 'length' of arrays must not have any arguments in '%s' on line %d",
+                                node->file,
+                                node->line);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /* lookup the method name in the receiver's member table */
+    methodEntry = lookup(rcvrType->u.simpleType.class->mbrTable, node->u.callStm.name, ENTRY_KIND_METHOD);
+    if (methodEntry == NULL) {
+        error("method '%s' not found in '%s' on line %d",
+                node->u.callStm.name->string,
+                node->file,
+                node->line);
+    }
+    
+    /* if actual class is not same or subclass of receivers's type 
+     * then the method must be public
+     * otherwise it cannot be seen in this context */
+    if ( ! methodEntry->u.methodEntry.isPublic) {
+        if ( ! isSameOrSubclassOf(actClass, rcvrType->u.simpleType.class) ) {
+            error("method '%s' is not public in '%s' on line %d",
+                    node->u.callStm.name->string,
+                    node->file,
+                    node->line);
+        }
+    }
+
+    if ( methodEntry->u.methodEntry.isStatic ) {
+        /* if the method is static and the receiver is not a class
+         * then the method cannot be called */
+        if ( rcvrNode->type == ABSYN_VAREXP ) {
+            if (rcvrNode->u.varExp.var->type == ABSYN_SIMPLEVAR) {
+                tmpEntry = lookupClass(fileTable,
+                        globalTable,
+                        rcvrNode->u.varExp.var->u.simpleVar.name);
+
+                if (tmpEntry == NULL) {
+                    error("static method '%s' can only be called with a class as receiver in '%s' on line %d",
+                        node->u.callStm.name->string,
+                        node->file,
+                        node->line);
+                }
+            } else {
+                error("error in CallStm: the receiver is no simpleVar");
+            }
+        } else {
+            error("error in CallStm: the receiver is no varExp");
+        }
+    } else {
+        /* if method is not static and the receiver is a class name
+         * then the method cannot be called */
+        if ( rcvrNode->type == ABSYN_VAREXP ) {
+            if (rcvrNode->u.varExp.var->type == ABSYN_SIMPLEVAR) {
+                tmpEntry = lookupClass(fileTable,
+                        globalTable,
+                        rcvrNode->u.varExp.var->u.simpleVar.name);
+
+                if (tmpEntry != NULL) {
+                    error("non-static method '%s' cannot be called with a class as receiver in '%s' on line %d",
+                        node->u.callStm.name->string,
+                        node->file,
+                        node->line);
+                }
+            }
+        }
+    }
+
+    /* check arguments */
+    /* Loop over the args and paramtypes and compare their types */
+    
+    paramList = methodEntry->u.methodEntry.paramTypes;
+    args = node->u.callStm.args;
+
+    for( i = 0 ; !paramList->isEmpty &&  !args->u.expList.isEmpty ; i++ ) {
+        /* body -> prolog */
+        /* 1. Type: determine directly */
+        paramType = paramList->type;
+
+        /* 2. Type: determine with checkNode */
+        checkNode(args->u.expList.head, fileTable, localTable, actClass, classTable,
+                globalTable, breakAllowed, argType, pass);
+
+        /* body -> main part */
+        /* if one argument is not same or subtype of param then the method
+         * cannot be called */
+        if(!isSameOrSubtypeOf(argType, paramType)) {
+            error("method '%s' called with incompatible argument type (argument #%d) in '%s' on line %d",
+                    node->u.callStm.name->string,
+                    getLength(methodEntry->u.methodEntry.paramTypes) - i,
+                    node->file,
+                    node->line);
+        }
+
+        /* body -> epilog*/
+        paramList = paramList->next;
+        args = args->u.expList.tail;
+    }
+
+    /* check if params and args count are the same */
+    if ( ! (args->u.expList.isEmpty && paramList->isEmpty) ) {
+        if ( args->u.expList.isEmpty ) {
+            error("method '%s' called with too few arguments in '%s' on line %d",
+                    node->u.callStm.name->string,
+                    node->file,
+                    node->line);
+        }
+
+        if ( paramList->isEmpty ) {
+            error("method '%s' called with too many arguments in '%s' on line %d",
+                    node->u.callStm.name->string,
+                    node->file,
+                    node->line);
+        }
+    }
+
+    free(rcvrType);
+    free(argType);
+}
+
+
+static void checkBinOpExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+/*
+#define ABSYN_BINOP_LOR		0
+#define ABSYN_BINOP_LAND	1
+#define ABSYN_BINOP_EQ		2
+#define ABSYN_BINOP_NE		3
+#define ABSYN_BINOP_LT		4
+#define ABSYN_BINOP_LE		5
+#define ABSYN_BINOP_GT		6
+#define ABSYN_BINOP_GE		7
+#define ABSYN_BINOP_ADD		8
+#define ABSYN_BINOP_SUB		9
+#define ABSYN_BINOP_MUL		10
+#define ABSYN_BINOP_DIV		11
+#define ABSYN_BINOP_MOD		12
+*/
+    Entry *booleanEntry = lookupClass(fileTable, globalTable, newSym("Boolean"));
+    Type *booleanType = newSimpleType(booleanEntry->u.classEntry.class);
+    Entry *integerEntry = lookupClass(fileTable, globalTable, newSym("Integer"));
+    Type *integerType = newSimpleType(integerEntry->u.classEntry.class);
+    Entry *characterEntry = lookupClass(fileTable, globalTable, newSym("Character"));
+    Type *characterType = newSimpleType(characterEntry->u.classEntry.class);
+
+    int op = node->u.binopExp.op;
+    Absyn *left  = node->u.binopExp.left;
+    Absyn *right = node->u.binopExp.right;
+
+    Type *leftType  = allocate(sizeof(Type));
+    Type *rightType = allocate(sizeof(Type));
+
+    /* determine type of left */
+    checkNode(left, fileTable, localTable, actClass, classTable,
+            globalTable, breakAllowed, leftType, pass);
+    
+    /* determine type of right*/
+    checkNode(right, fileTable, localTable, actClass, classTable,
+            globalTable, breakAllowed, rightType, pass);
+
+
+    switch(op) {
+        case ABSYN_BINOP_LOR:
+        case ABSYN_BINOP_LAND:
+            /* check if left operand is boolean*/
+            if (leftType->kind == TYPE_KIND_SIMPLE) {
+                if ( ! isSameOrSubtypeOf(leftType, booleanType) ) {
+                    error("left operand of boolean expression must be a Boolean in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            } else {
+                error("left operand of boolean expression must be a Boolean in '%s' on line %s",
+                        node->file,
+                        node->line);
+            }
+
+            /* check if right operand is boolean*/
+            if (rightType->kind == TYPE_KIND_SIMPLE) {
+                if ( ! isSameOrSubtypeOf(rightType, booleanType) ) {
+                    error("right operand of boolean expression must be a Boolean in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            } else {
+                error("right operand of boolean expression must be a Boolean in '%s' on line %s",
+                        node->file,
+                        node->line);
+            }
+            break;
+        case ABSYN_BINOP_EQ:
+        case ABSYN_BINOP_NE:
+        case ABSYN_BINOP_LT:
+        case ABSYN_BINOP_LE:
+        case ABSYN_BINOP_GT:
+        case ABSYN_BINOP_GE:
+            /* check if left operand is character or integer */
+            if (leftType->kind == TYPE_KIND_SIMPLE) {
+                if ( ! ( isSameOrSubtypeOf(leftType, integerType)
+                         || isSameOrSubtypeOf(leftType, characterType)
+                       ) ) {
+                    error("left operand of comparison must be an Integer or a Character in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            } else {
+                error("left operand of comparison must be an Integer or a Character in '%s' on line %d",
+                        node->file,
+                        node->line);
+            }
+
+            /* if left operand is integer check if right operand is integer */
+            if ( isSameOrSubtypeOf(leftType, integerType) ) {
+                if (rightType->kind != TYPE_KIND_SIMPLE) {
+                    error("right operand of comparison must be an Integer in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+                
+                if ( !isSameOrSubtypeOf(rightType, integerType) ) {
+                    error("right operand of comparison must be an Integer in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            }
+
+            /* if left operand is character check if right operand is character */
+            if ( isSameOrSubtypeOf(leftType, characterType) ) {
+                if (rightType->kind != TYPE_KIND_SIMPLE) {
+                    error("right operand of comparison must be an Character in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+
+                if ( !isSameOrSubtypeOf(rightType, characterType) ) {
+                    error("right operand of comparison must be an Character in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            }
+            break;
+        default:
+            error("You found an unexspected BinOp: %d", op);
+            break;
+    }
+
+    free(leftType);
+    free(rightType);
+}
+
+
+    static void checkNilExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    
+    Type *nilType = newNilType();
+    *returnType = *nilType;
 }
 
 
@@ -1194,7 +1635,7 @@ static void checkIntExp(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
-    Entry *integerEntry = lookup(globalTable, newSym("Integer"), ENTRY_KIND_CLASS);
+    Entry *integerEntry = lookupClass(fileTable, globalTable, newSym("Integer"));
     Type *integerType = newSimpleType(integerEntry->u.classEntry.class);
     *returnType = *integerType;
 }
@@ -1210,9 +1651,43 @@ static void checkBoolExp(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
-    Entry *booleanEntry = lookup(globalTable, newSym("Boolean"), ENTRY_KIND_CLASS);
+    Entry *booleanEntry = lookupClass(fileTable, globalTable, newSym("Boolean"));
     Type *booleanType = newSimpleType(booleanEntry->u.classEntry.class);
     *returnType = *booleanType;
+}
+
+
+static void checkCharExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    Entry *characterEntry = lookupClass(fileTable, globalTable, newSym("Character"));
+    Type *characterType = newSimpleType(characterEntry->u.classEntry.class);
+    *returnType = *characterType;
+}
+
+
+static void checkSelfExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    /* lookup and return type of selfExp */
+    Entry *tmpEntry = lookupClass(fileTable, globalTable, actClass->name);
+    Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
+    *returnType = *tmpType;
 }
 
 
@@ -1229,11 +1704,32 @@ static void checkNewExp(
     /* ToDo: here could be checks for checking the arguments of the newExp matches
      * the constructor of the class, but I'm to tired right now.
      * so just return the type of the class... */
-    Entry *tmpEntry = lookup(globalTable, node->u.newExp.type, ENTRY_KIND_CLASS);
+    Entry *tmpEntry = lookupClass(fileTable, globalTable, node->u.newExp.type);
     Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
     *returnType = *tmpType;
+}
 
+static void checkCallExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
 
+    Entry *callExpMethodEntry = lookup(classTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+    Type *callExpType = callExpMethodEntry->u.methodEntry.retType;
+
+    *returnType = *callExpType;
+
+    /*
+     * node->u.callExp.args
+     * node->u.callExp.name
+     * node->u.callExp.rcvr
+     */
 }
 
 
@@ -1246,9 +1742,11 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     Class *objectClass;
     Class *integerClass;
     Class *booleanClass;
+    Class *characterClass;
     Entry *objectEntry;
     Entry *integerEntry;
     Entry *booleanEntry;
+    Entry *characterEntry;
     Entry *mainClassEntry;
     Entry *mainMethodEntry;
 
@@ -1270,6 +1768,10 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     booleanClass = newClass(TRUE, newSym("Boolean"), NULL, newTable(globalTable));
     booleanEntry = newClassEntry(booleanClass);
     enter(globalTable, booleanClass->name, booleanEntry);
+
+    characterClass = newClass(TRUE, newSym("Character"), NULL, newTable(globalTable));
+    characterEntry = newClassEntry(characterClass);
+    enter(globalTable, characterClass->name, characterEntry);
 
     /* Allocate needed Table pointer space */
     fileTables = (Table **)allocate(numInFiles * sizeof(Table *));

@@ -191,6 +191,16 @@ static Entry *lookupBintree(Bintree *bintree, unsigned key, int kind) {
 }
 
 
+Entry *lookupClass(Table **fileTable, Table *globalTable, Sym *sym) {
+    Entry *varEntry = lookup(*fileTable, sym, ENTRY_KIND_CLASS);
+    if (varEntry == NULL) {
+        varEntry = lookup(globalTable, sym, ENTRY_KIND_CLASS);
+    }
+
+    return varEntry;
+}
+
+
 Entry *lookup(Table *table, Sym *sym, int kind) {
   unsigned key;
   Entry *entry;
