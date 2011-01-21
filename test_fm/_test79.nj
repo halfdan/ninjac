@@ -1,0 +1,19 @@
+//
+// non-field accessed as field
+//
+
+
+public class Main extends Object {
+
+  Integer x() {
+    return 0;
+  }
+
+  void f() {
+    self.x = 42;
+  }
+
+  public static void main() {
+  }
+
+}

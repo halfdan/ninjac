@@ -1,0 +1,13 @@
+//
+// left operand not integer
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Integer x;
+    x = 'a' + 5;
+  }
+
+}

@@ -1,0 +1,14 @@
+//
+// non-static field accessed within a static method
+//
+
+
+public class Main extends Object {
+
+  Integer x;
+
+  public static void main() {
+    x = 42;
+  }
+
+}

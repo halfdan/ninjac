@@ -1,0 +1,12 @@
+//
+// field not found
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    Main.x = 42;
+  }
+
+}

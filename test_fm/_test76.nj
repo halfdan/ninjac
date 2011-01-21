@@ -1,0 +1,12 @@
+//
+// nil does not have any fields
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    nil.x = 42;
+  }
+
+}

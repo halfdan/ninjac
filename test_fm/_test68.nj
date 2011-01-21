@@ -1,0 +1,14 @@
+//
+// static field accessed without class name
+//
+
+
+public class Main extends Object {
+
+  static Integer x;
+
+  public static void main() {
+    x = 42;
+  }
+
+}

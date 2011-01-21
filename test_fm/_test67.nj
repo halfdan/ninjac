@@ -1,0 +1,12 @@
+//
+// undefined variable
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    x = 42;
+  }
+
+}

@@ -1,0 +1,7 @@
+//
+// public class Main does not contain a method 'main'
+//
+
+
+public class Main extends Object {
+}

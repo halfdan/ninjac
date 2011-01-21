@@ -1,0 +1,13 @@
+//
+// index is not an Integer
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Integer[] x;
+    x[2 < 3] = 42;
+  }
+
+}

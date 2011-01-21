@@ -1,0 +1,19 @@
+//
+// field must be static
+//
+
+
+class Aux extends Object {
+
+  public Integer x;
+
+}
+
+
+public class Main extends Object {
+
+  public static void main() {
+    Aux.x = 42;
+  }
+
+}

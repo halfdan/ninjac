@@ -1,0 +1,13 @@
+//
+// variable cannot be indexed
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Integer x;
+    x[2] = 42;
+  }
+
+}

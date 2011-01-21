@@ -1,0 +1,15 @@
+//
+// void does not have any fields
+//
+
+
+public class Main extends Object {
+
+  static void f() {
+  }
+
+  public static void main() {
+    Main.f().x = 42;
+  }
+
+}

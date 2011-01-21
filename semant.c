@@ -1601,13 +1601,13 @@ static void checkBinOpExp(
             /* if left operand is character check if right operand is character */
             if ( isSameOrSubtypeOf(leftType, characterType) ) {
                 if (rightType->kind != TYPE_KIND_SIMPLE) {
-                    error("right operand of comparison must be an Character in '%s' on line %d",
+                    error("right operand of comparison must be a Character in '%s' on line %d",
                             node->file,
                             node->line);
                 }
 
                 if ( !isSameOrSubtypeOf(rightType, characterType) ) {
-                    error("right operand of comparison must be an Character in '%s' on line %d",
+                    error("right operand of comparison must be a Character in '%s' on line %d",
                             node->file,
                             node->line);
                 }
@@ -1860,7 +1860,7 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
                 error("method 'main' of public class '%s' is not static", mainClass);
             }
             if ( mainMethodEntry->u.methodEntry.retType->kind != TYPE_KIND_VOID ) {
-                error("method 'main' of public class '%s' must have return type 'void", mainClass);
+                error("method 'main' of public class '%s' must have return type 'void'", mainClass);
             }
             if ( ! mainMethodEntry->u.methodEntry.paramTypes->isEmpty ) {
                 error("method 'main' of public class '%s' must not have any arguments", mainClass);

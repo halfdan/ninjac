@@ -1,0 +1,11 @@
+//
+// method 'main' is not static
+//
+
+
+public class Main extends Object {
+
+  public void main() {
+  }
+
+}

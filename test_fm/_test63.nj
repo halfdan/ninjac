@@ -1,0 +1,22 @@
+//
+// 'instanceof' has inconvertible types
+//
+
+
+class A extends Object {
+}
+
+
+class B extends Object {
+}
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local A a;
+    local Boolean res;
+    res = a instanceof B;
+  }
+
+}

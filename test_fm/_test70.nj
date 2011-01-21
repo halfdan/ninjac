@@ -1,0 +1,16 @@
+//
+// non-variable accessed as variable
+//
+
+
+public class Main extends Object {
+
+  Integer x() {
+    return 0;
+  }
+
+  public static void main() {
+    x = 42;
+  }
+
+}

@@ -1,0 +1,12 @@
+//
+// method 'main' must have return type 'void'
+//
+
+
+public class Main extends Object {
+
+  public static Integer main() {
+    return 42;
+  }
+
+}

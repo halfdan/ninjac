@@ -1,0 +1,11 @@
+//
+// method 'main' is not public
+//
+
+
+public class Main extends Object {
+
+  static void main() {
+  }
+
+}

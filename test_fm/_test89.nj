@@ -1,0 +1,11 @@
+//
+// method 'main' must not have any arguments
+//
+
+
+public class Main extends Object {
+
+  public static void main(Integer x) {
+  }
+
+}

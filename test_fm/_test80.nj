@@ -1,0 +1,20 @@
+//
+// field is not public
+//
+
+
+class Aux extends Object {
+
+  Integer x;
+
+}
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Aux a;
+    a.x = 42;
+  }
+
+}

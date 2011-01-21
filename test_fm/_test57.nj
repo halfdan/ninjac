@@ -1,0 +1,13 @@
+//
+// right operand not character
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+    local Boolean x;
+    x = 'a' <= 50;
+  }
+
+}

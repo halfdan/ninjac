@@ -1,0 +1,15 @@
+//
+// 'self' not available
+//
+
+
+public class Main extends Object {
+
+  void f() {
+  }
+
+  public static void main() {
+    f();
+  }
+
+}
