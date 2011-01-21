@@ -12,7 +12,7 @@
 extern "C" {
 #endif
 
-Table *check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables);
+Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables);
 
 
 #ifdef	__cplusplus

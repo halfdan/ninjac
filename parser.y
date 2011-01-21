@@ -226,10 +226,10 @@ type			: IDENT
 			                     newSym($1.val));
 			  }
 			| IDENT LBRACK RBRACK more_dims
-			  {
-                            arrayDims = 1; /* reset array dimension counter */
+			  {                            
 			    $$ = newArrayTy($2.file, $2.line,
                                              newSym($1.val), arrayDims);
+                            arrayDims = 1; /* reset array dimension counter */
 			  }
 			;
 

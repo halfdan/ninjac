@@ -308,6 +308,16 @@ static void checkNewExp(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkNewArrayExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 static void checkCallExp(
         Absyn *node,
         Table **fileTable,
@@ -425,6 +435,10 @@ static void checkNode(
             break;
         case ABSYN_CALLEXP:
             checkCallExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_NEWARRAYEXP:
+            checkNewArrayExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
         default: {
@@ -1609,7 +1623,7 @@ static void checkBinOpExp(
 }
 
 
-    static void checkNilExp(
+static void checkNilExp(
         Absyn *node,
         Table **fileTable,
         Table *localTable,
@@ -1706,6 +1720,24 @@ static void checkNewExp(
      * so just return the type of the class... */
     Entry *tmpEntry = lookupClass(fileTable, globalTable, node->u.newExp.type);
     Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
+    *returnType = *tmpType;
+}
+
+static void checkNewArrayExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    /* ToDo: here could be checks for checking the arguments of the newExp matches
+     * the constructor of the class, but I'm to tired right now.
+     * so just return the type of the class... */
+    Entry *tmpEntry = lookupClass(fileTable, globalTable, node->u.newArrayExp.type);
+    Type *tmpType = newArrayType(tmpEntry->u.classEntry.class, node->u.newArrayExp.dims);
     *returnType = *tmpType;
 }
 
