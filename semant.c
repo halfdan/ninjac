@@ -32,6 +32,12 @@
  *
  */
 
+
+/* i had to do this ugly hack because we have no possibility to save the actual
+ * function like the actual class. This is not because we are too lazy to implement
+ * a new parameter but because we have no 'Type Method' */
+Entry *actMethod;
+
 static void checkNode(
         Absyn *node,
         Table **fileTable,
@@ -142,6 +148,106 @@ static void checkSimpleVar(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkIfStm1(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkIfStm2(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkWhileStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkDoStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkBreakStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkRetStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkRetExpStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkIntExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkBoolExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkNewExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 
 static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
 
@@ -181,6 +287,50 @@ static void checkNode(
             break;
         case ABSYN_VAREXP:
             checkVarExp(node, fileTable, localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_SIMPLEVAR:
+            checkSimpleVar(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_IFSTM1:
+            checkIfStm1(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_IFSTM2:
+            checkIfStm2(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_WHILESTM:
+            checkWhileStm(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_DOSTM:
+            checkDoStm(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_BREAKSTM:
+            checkBreakStm(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_RETSTM:
+            checkRetStm(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_RETEXPSTM:
+            checkRetExpStm(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_INTEXP:
+            checkIntExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_BOOLEXP:
+            checkBoolExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_NEWEXP:
+            checkNewExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
         default: {
@@ -450,6 +600,10 @@ static void checkMethodDec(
         case 3:
             /* Fetch method entry from class table */
             methodEntry = lookup(classTable, node->u.methodDec.name, ENTRY_KIND_METHOD);
+
+            /* save a pointer of actual method */
+            actMethod = methodEntry;
+
             /* Does the method already exist in the super class? */
             superClassMethodEntry = lookupMember(actClass->superClass, node->u.methodDec.name, ENTRY_KIND_METHOD);
             if(superClassMethodEntry != NULL) {
@@ -745,12 +899,17 @@ static void checkAssignStm(
     Absyn *lhs, *rhs;
     Type *lhs_t, *rhs_t;
 
+    lhs_t = allocate(sizeof(Type));
+    rhs_t = allocate(sizeof(Type));
+
     switch(pass) {
         case 0:
             break;
         case 1:
             break;
         case 2:
+            break;
+        case 3:
             /* Bsp.: lhs = rhs ; */
             /* lhs ist immer varExp */
             checkNode(node->u.assignStm.var, fileTable, localTable, actClass,
@@ -760,13 +919,14 @@ static void checkAssignStm(
                     classTable, globalTable, breakAllowed, rhs_t, pass);
 
             if ( ! isSameOrSubtypeOf(rhs_t, lhs_t) ) {
-                printf("assignment right-hand side cannot be converted to left-hand side in '%s' on line %d.\n",
+                error("assignment right-hand side cannot be converted to left-hand side in '%s' on line %d",
                         node->file,
                         node->line);
             }
+
+            free(lhs_t);
+            free(rhs_t);
             /* ToDo */
-            break;
-        case 3:
             break;
         default:
             break;
@@ -783,25 +943,20 @@ static void checkVarExp(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
-    switch(pass) {
-        case 0:
-            break;
-        case 1:
-            break;
-        case 2:
-            switch(node->u.varExp.var->type) {
-                case ABSYN_SIMPLEVAR:
-                    checkSimpleVar(node, fileTable,localTable, actClass, classTable,
-                            globalTable, breakAllowed, returnType, pass);
-                    break;
-                default:
-                    error("You found a varExp that is not implemented!");
-                    break;
-            }
-            break;
-        case 3:
+
+    /* don't differenciate (Schlumpf) between passes because expressions
+     * only matter in pass 4 */
+    switch(node->u.varExp.var->type) {
+        case ABSYN_SIMPLEVAR:
+            /* in case the varExp is a simple var
+             * check the var absyn node and hope checkSimpleVar returns the
+             * correct type */
+            checkSimpleVar(node->u.varExp.var, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
             break;
         default:
+            error("You found a varExp that is not implemented! It's %d.",
+                    node->type);
             break;
     }
 }
@@ -817,18 +972,268 @@ static void checkSimpleVar(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
-    switch(pass) {
-        case 0:
-            break;
-        case 1:
-            break;
-        case 2:
-            break;
-        case 3:
-            break;
-        default:
-            break;
+
+    Entry *varEntry;
+
+    /* lookup the name of the simplevar and save its type */
+    varEntry = lookup(localTable, node->u.simpleVar.name, ENTRY_KIND_VARIABLE);
+    if ( varEntry == NULL ) {
+        /* this should never happen (hopefully) */
+        error("error in checkSimpleVar pass %d!", pass);
     }
+
+    /* this saves the type in the space which was allocated by one of the
+     * calling functions */
+    *returnType = *(varEntry->u.variableEntry.type);
+}
+
+static void checkIfStm1(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Absyn *test = node->u.ifStm1.test;
+    Absyn *thenPart = node->u.ifStm1.thenPart;
+
+    Type *testType = allocate(sizeof(Type));
+
+    checkNode(test, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, testType, pass);
+
+    if ( strcmp(testType->u.simpleType.class->name->string, "Boolean" ) ) {
+        error("'if' test expression must be a Boolean in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+    
+    checkNode(thenPart, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, returnType, pass);
+
+    free(testType);
+}
+
+
+static void checkIfStm2(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Absyn *test = node->u.ifStm1.test;
+    Absyn *thenPart = node->u.ifStm2.thenPart;
+    Absyn *elsePart = node->u.ifStm2.elsePart;
+
+    Type *testType = allocate(sizeof(Type));
+
+    checkNode(test, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, testType, pass);
+
+    if ( strcmp(testType->u.simpleType.class->name->string, "Boolean" ) ) {
+        error("'if' test expression must be a Boolean in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+    checkNode(thenPart, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, returnType, pass);
+    checkNode(elsePart, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, returnType, pass);
+
+    free(testType);
+}
+
+
+static void checkWhileStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    Absyn *test = node->u.whileStm.test;
+    Absyn *body = node->u.whileStm.body;
+
+    Type *testType = allocate(sizeof(Type));
+
+    checkNode(test, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, testType, pass);
+
+    if ( strcmp(testType->u.simpleType.class->name->string, "Boolean" ) ) {
+        error("'while' test expression must be a Boolean in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+    checkNode(body, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, returnType, pass);
+
+    free(testType);
+}
+
+
+static void checkDoStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    Absyn *test = node->u.doStm.test;
+    Absyn *body = node->u.doStm.body;
+
+    Type *testType = allocate(sizeof(Type));
+
+    checkNode(test, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, testType, pass);
+
+    if ( strcmp(testType->u.simpleType.class->name->string, "Boolean" ) ) {
+        error("'do' test expression must be a Boolean in '%s' on line %d",
+                node->file,
+                node->u.doStm.test->line);
+    }
+
+    checkNode(body, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, returnType, pass);
+
+    free(testType);
+}
+
+
+static void checkBreakStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    if ( ! breakAllowed ) {
+        error("misplaced 'break' in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+}
+
+
+static void checkRetStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass){
+
+    if (actMethod->u.methodEntry.retType->kind != TYPE_KIND_VOID) {
+        error("return statement must return a value in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+}
+
+
+static void checkRetExpStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass){
+
+    
+    if (actMethod->u.methodEntry.retType->kind == TYPE_KIND_VOID) {
+        error("return statement must not return a value in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+    /* ich denke das brauchen wir später
+    Type *actMethodRetType = actMethod->u.methodEntry.retType;
+    Type *retExpStmRetType = lookupTypeFromAbsyn(chenode->u.retExpStm.exp, globalTable);
+
+    if (isSameOrSubtypeOf(retExpStmRetType, actMethodRetType)) {
+        error("return statement must return a value in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+    */
+}
+
+
+static void checkIntExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    Entry *integerEntry = lookup(globalTable, newSym("Integer"), ENTRY_KIND_CLASS);
+    Type *integerType = newSimpleType(integerEntry->u.classEntry.class);
+    *returnType = *integerType;
+}
+
+
+static void checkBoolExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    Entry *booleanEntry = lookup(globalTable, newSym("Boolean"), ENTRY_KIND_CLASS);
+    Type *booleanType = newSimpleType(booleanEntry->u.classEntry.class);
+    *returnType = *booleanType;
+}
+
+
+static void checkNewExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    /* ToDo: here could be checks for checking the arguments of the newExp matches
+     * the constructor of the class, but I'm to tired right now.
+     * so just return the type of the class... */
+    Entry *tmpEntry = lookup(globalTable, node->u.newExp.type, ENTRY_KIND_CLASS);
+    Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
+    *returnType = *tmpType;
+
+
 }
 
 
@@ -846,7 +1251,9 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     Entry *booleanEntry;
     Entry *mainClassEntry;
     Entry *mainMethodEntry;
-    
+
+    Type *returnType = allocate(sizeof(Type));
+
     int i;
 
     /* Initialize trivial Classes */
@@ -886,9 +1293,9 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     }
 
     /* fourth pass: typechecking */
-    for(i = 0; i < numInFiles; i++) {
+            for(i = 0; i < numInFiles; i++) {
          checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
-                globalTable, FALSE, NULL, 3);
+                globalTable, FALSE, returnType, 3);
     }
 
     if (showSymbolTables) {
@@ -927,6 +1334,7 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
         }
     }
 
+    free(returnType);
     return fileTables;
 }
 

@@ -1,5 +1,6 @@
 //
 // one method with a local variable and new expression
+// assigning a superclass object to a subclass variable
 //
 
 public class Main extends Object {
