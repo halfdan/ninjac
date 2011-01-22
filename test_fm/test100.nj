@@ -3,11 +3,11 @@ public class Point extends Object {
     Integer y;
 
     void move(Point delta) {
-        x = x+delta.x;
-        y = y+delta.y;
+        x = x + delta.x;
+        y = y + delta.y;
     }
 
-    void mirror() {
+    public void mirror() {
         x = -x;
         y = -y;
     }
@@ -21,7 +21,7 @@ class ColoredPoint extends Point {
         self.y = y;
     }
 
-    void mirror() {
+    public void mirror() {
         x = -x;
         y = -y;
         color = 42;

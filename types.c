@@ -74,6 +74,7 @@ Type *newVoidType(void) {
 
   type = (Type *) allocate(sizeof(Type));
   type->kind = TYPE_KIND_VOID;
+  type->isStatic = -1;
   return type;
 }
 
@@ -83,6 +84,7 @@ Type *newNilType(void) {
 
   type = (Type *) allocate(sizeof(Type));
   type->kind = TYPE_KIND_NIL;
+  type->isStatic = -1;
   return type;
 }
 
@@ -92,6 +94,18 @@ Type *newSimpleType(Class *class) {
 
   type = (Type *) allocate(sizeof(Type));
   type->kind = TYPE_KIND_SIMPLE;
+  type->isStatic = FALSE;
+  type->u.simpleType.class = class;
+  return type;
+}
+
+
+Type *newStaticSimpleType(Class *class) {
+  Type *type;
+
+  type = (Type *) allocate(sizeof(Type));
+  type->kind = TYPE_KIND_SIMPLE;
+  type->isStatic = TRUE;
   type->u.simpleType.class = class;
   return type;
 }
@@ -102,6 +116,7 @@ Type *newArrayType(Class *base, int dims) {
 
   type = (Type *) allocate(sizeof(Type));
   type->kind = TYPE_KIND_ARRAY;
+  type->isStatic = FALSE;
   type->u.arrayType.base = base;
   type->u.arrayType.dims = dims;
   return type;
@@ -109,6 +124,34 @@ Type *newArrayType(Class *base, int dims) {
 
 
 boolean isSameOrSubtypeOf(Type *type1, Type *type2) {
+  switch (type1->kind) {
+    case TYPE_KIND_VOID:
+      return type2->kind == TYPE_KIND_VOID;
+    case TYPE_KIND_NIL:
+      return type2->kind != TYPE_KIND_VOID;
+    case TYPE_KIND_SIMPLE:
+      return (type2->kind == TYPE_KIND_SIMPLE) &&
+             isSameOrSubclassOf(type1->u.simpleType.class,
+                                type2->u.simpleType.class) &&
+              type1->isStatic == type2->isStatic;
+    case TYPE_KIND_ARRAY:
+      return (type2->kind == TYPE_KIND_ARRAY) &&
+             isSameOrSubclassOf(type1->u.arrayType.base,
+                                type2->u.arrayType.base) &&
+             (type1->u.arrayType.dims == type2->u.arrayType.dims);
+    default:
+      /* this should never happen */
+      error("unknown type kind %d in isSameOrSubtypeOf", type1->kind);
+      break;
+  }
+  return FALSE;
+}
+
+
+boolean isStaticTypeOf(Type *type1, Type *type2) {
+  if (type1->isStatic == type2->isStatic)
+    return FALSE;
+    
   switch (type1->kind) {
     case TYPE_KIND_VOID:
       return type2->kind == TYPE_KIND_VOID;
@@ -131,7 +174,6 @@ boolean isSameOrSubtypeOf(Type *type1, Type *type2) {
   return FALSE;
 }
 
-
 void showType(Type *type) {
   int i;
 
@@ -144,6 +186,7 @@ void showType(Type *type) {
       break;
     case TYPE_KIND_SIMPLE:
       printf("%s", symToString(type->u.simpleType.class->name));
+      if (type->isStatic) printf(" (static)");
       break;
     case TYPE_KIND_ARRAY:
       printf("%s", symToString(type->u.arrayType.base->name));

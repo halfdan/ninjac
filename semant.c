@@ -78,6 +78,16 @@ static void checkMethodDec(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkSimpleTy(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 static void checkFile(
         Absyn *node,
         Table **fileTable,
@@ -139,6 +149,26 @@ static void checkVarExp(
         Type *returnType,
         int pass);
 static void checkSimpleVar(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkArrayVar(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkMemberVar(
         Absyn *node,
         Table **fileTable,
         Table *localTable,
@@ -238,6 +268,36 @@ static void checkBinOpExp(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkUnOpExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkInstanceOfExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
+static void checkCastExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 static void checkNilExp(
         Absyn *node,
         Table **fileTable,
@@ -288,6 +348,16 @@ static void checkSelfExp(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkSuperExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 static void checkNilExp(
         Absyn *node,
         Table **fileTable,
@@ -328,6 +398,16 @@ static void checkCallExp(
         boolean breakAllowed,
         Type *returnType,
         int pass);
+static void checkAsmStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass);
 
 static Type *lookupTypeFromAbsyn(Absyn *node, Table **fileTable);
 
@@ -355,6 +435,10 @@ static void checkNode(
             checkMethodDec(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
+        case ABSYN_SIMPLETY:
+            checkSimpleTy(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
         case ABSYN_EMPTYSTM:
             break;
         case ABSYN_COMPSTM:
@@ -371,6 +455,14 @@ static void checkNode(
             break;
         case ABSYN_SIMPLEVAR:
             checkSimpleVar(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_ARRAYVAR:
+            checkArrayVar(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_MEMBERVAR:
+            checkMemberVar(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
         case ABSYN_IFSTM1:
@@ -409,6 +501,18 @@ static void checkNode(
             checkBinOpExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
+        case ABSYN_UNOPEXP:
+            checkUnOpExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_INSTOFEXP:
+            checkInstanceOfExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_CASTEXP:
+            checkCastExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
         case ABSYN_NILEXP:
             checkNilExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
@@ -429,6 +533,10 @@ static void checkNode(
             checkSelfExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
+        case ABSYN_SUPEREXP:
+            checkSuperExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
         case ABSYN_NEWEXP:
             checkNewExp(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
@@ -439,6 +547,10 @@ static void checkNode(
             break;
         case ABSYN_NEWARRAYEXP:
             checkNewArrayExp(node, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, returnType, pass);
+            break;
+        case ABSYN_ASMSTM:
+            checkAsmStm(node, fileTable,localTable, actClass, classTable,
                     globalTable, breakAllowed, returnType, pass);
             break;
         default: {
@@ -597,7 +709,7 @@ static void checkFieldDec(
             fieldEntry = newVariableEntry(FALSE, node->u.fieldDec.publ, node->u.fieldDec.stat, fieldType);
 
 
-            /* Add the entry to the fileTable */
+            /* Add the entry to the member Table */
             if(NULL == enter(classTable, node->u.fieldDec.name, fieldEntry)) {
                 error("redeclaration of field '%s' (defined in class '%s') in file '%s' on line %d",
                         node->u.fieldDec.name->string,
@@ -900,6 +1012,29 @@ static void checkVarDec(
     }
 }
 
+static void checkSimpleTy(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Sym *name = node->u.simpleTy.name;
+    Entry *typeEntry = lookupClass(fileTable, globalTable, name);
+    Type *typeType;
+
+    if(typeEntry == NULL) {
+        error("Simpletype is not a type");
+    }
+
+    typeType = newStaticSimpleType(typeEntry->u.classEntry.class);
+
+    *returnType = *typeType;
+}
 
 static void checkFile(
         Absyn *node,
@@ -1017,7 +1152,9 @@ static void checkAssignStm(
         Type *returnType,
         int pass) {
 
-    Absyn *lhs, *rhs;
+    Absyn *lhs = node->u.assignStm.var;
+    Absyn *rhs = node->u.assignStm.exp;
+    Entry *var;
     Type *lhs_t, *rhs_t;
 
     lhs_t = allocate(sizeof(Type));
@@ -1033,16 +1170,50 @@ static void checkAssignStm(
         case 3:
             /* Bsp.: lhs = rhs ; */
             /* lhs ist immer varExp */
-            checkNode(node->u.assignStm.var, fileTable, localTable, actClass,
+            checkNode(lhs, fileTable, localTable, actClass,
                     classTable, globalTable, breakAllowed, lhs_t, pass);
             /* rhs ist irgendeine Exp */
-            checkNode(node->u.assignStm.exp, fileTable, localTable, actClass,
+            checkNode(rhs, fileTable, localTable, actClass,
                     classTable, globalTable, breakAllowed, rhs_t, pass);
 
             if ( ! isSameOrSubtypeOf(rhs_t, lhs_t) ) {
                 error("assignment right-hand side cannot be converted to left-hand side in '%s' on line %d",
                         node->file,
                         node->line);
+            }
+
+            if (actMethod->u.methodEntry.isStatic) {
+                switch(lhs->type) {
+                    case ABSYN_SIMPLEVAR:
+                        var = lookup(classTable, lhs->u.simpleVar.name, ENTRY_KIND_VARIABLE);
+
+                        /* if variable is a local variable, everything is ok */
+                        if ( var == NULL ) {
+                            break;
+                        }
+
+
+                        /*
+                         *  if it is a memberVar then it is fail in every possibility
+                         * there are two ways how an assignment can fail in a static method:
+                         * 1) assignment to a non-static field
+                         * 2) assignment to a static field without the class name
+                         */
+                        if ( ! var->u.variableEntry.isStatic) {
+                            error("non-static field '%s' cannot be accessed within a static method in '%s' on line %d",
+                                    lhs->u.simpleVar.name->string,
+                                    node->file,
+                                    node->line);
+                        } else {
+                            error("static field '%s' cannot be accessed without a class name in '%s' on line %d",
+                                    lhs->u.simpleVar.name->string,
+                                    node->file,
+                                    node->line);
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
 
             free(lhs_t);
@@ -1065,6 +1236,8 @@ static void checkVarExp(
         Type *returnType,
         int pass) {
 
+    Type *tmpType = allocate(sizeof(Type));
+
     /* don't differenciate (Schlumpf) between passes because expressions
      * only matter in pass 4 */
     switch(node->u.varExp.var->type) {
@@ -1073,13 +1246,26 @@ static void checkVarExp(
              * check the var absyn node and hope checkSimpleVar returns the
              * correct type */
             checkSimpleVar(node->u.varExp.var, fileTable,localTable, actClass, classTable,
-                    globalTable, breakAllowed, returnType, pass);
+                    globalTable, breakAllowed, tmpType, pass);
+            break;
+        case ABSYN_ARRAYVAR:
+            /* in case the varExp is an array var
+             * check the  */
+            checkArrayVar(node->u.varExp.var, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, tmpType, pass);
+            break;
+        case ABSYN_MEMBERVAR:
+            checkMemberVar(node->u.varExp.var, fileTable,localTable, actClass, classTable,
+                    globalTable, breakAllowed, tmpType, pass);
             break;
         default:
             error("You found a varExp that is not implemented! It's %d.",
                     node->type);
             break;
     }
+
+    *returnType = *tmpType;
+    free(tmpType);
 }
 
 
@@ -1098,21 +1284,209 @@ static void checkSimpleVar(
 
     /* lookup the name of the simplevar and save its type */
     varEntry = lookup(localTable, node->u.simpleVar.name, ENTRY_KIND_VARIABLE);
-    if ( ! (varEntry == NULL) ) {
-        *returnType = *(varEntry->u.variableEntry.type);
-    } else {
-        varEntry = lookupClass(fileTable, globalTable, node->u.simpleVar.name);
 
-        if (varEntry == NULL) {
-            error("undefined variable '%s' in '%s' on line %d",
+    /* if no local variable is found
+     * then check if there maybe a member variable */
+    if ( varEntry == NULL ) {
+        varEntry = lookupMember(actClass, node->u.simpleVar.name, ENTRY_KIND_VARIABLE);
+
+        /* if it is no local and no member variable
+         * check if is a class */
+        if ( varEntry == NULL ) {
+            varEntry = lookupClass(fileTable, globalTable, node->u.simpleVar.name);
+
+            /* if it is still not found
+             * then it really is not defined at */
+            if (varEntry == NULL) {
+                error("undefined variable '%s' in '%s' on line %d",
+                        symToString(node->u.simpleVar.name),
+                        node->file,
+                        node->line);
+            } else {
+                *returnType = *(newStaticSimpleType(varEntry->u.classEntry.class));
+            }
+        } else {
+            *returnType = *(varEntry->u.variableEntry.type);
+        }
+    } else {
+        *returnType = *(varEntry->u.variableEntry.type);
+    }
+}
+
+
+static void checkArrayVar(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Entry *varEntry;
+    Type *indexType = allocate(sizeof(Type));
+    Type *varType = allocate(sizeof(Type));
+    Type *tmpType;
+
+    Absyn *index = node->u.arrayVar.index;
+    Absyn *varExp = node->u.arrayVar.var;
+    Absyn *var = varExp->u.varExp.var;
+    int dims;
+
+    Entry *integerEntry = lookupClass(fileTable, globalTable, newSym("Integer"));
+    Type *integerType = newSimpleType(integerEntry->u.classEntry.class);
+
+
+    checkNode(index, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, indexType, pass);
+    checkNode(var, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, varType, pass);
+
+    if ( ! isSameOrSubtypeOf(indexType, integerType) ) {
+        error("index must be an Integer in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+
+    for(    dims = 1;
+            var->type != ABSYN_SIMPLEVAR;
+            varExp = var->u.arrayVar.var,
+            var = varExp->u.varExp.var,
+            dims++) {}
+
+    varEntry = lookup(localTable, var->u.simpleVar.name, ENTRY_KIND_VARIABLE);
+
+    if (varEntry->u.variableEntry.type->kind == TYPE_KIND_SIMPLE) {
+        error("variable cannot be indexed in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+    if (varEntry->u.variableEntry.type->kind == TYPE_KIND_ARRAY) {
+        if (varEntry->u.variableEntry.type->u.arrayType.dims != dims ) {
+            error("variable cannot be indexed in '%s' on line %d",
+                    node->file,
+                    node->line);
+        }
+    }
+
+/*
+     switch(varType->kind) {
+        case TYPE_KIND_SIMPLE:
+            tmpType = newArrayType(varType->u.simpleType.class, 1);
+            break;
+        case TYPE_KIND_ARRAY:
+            tmpType = newArrayType(varType->u.arrayType.base, varType->u.arrayType.dims + 1);
+            break;
+        case TYPE_KIND_NIL:
+        case TYPE_KIND_VOID:
+        default:
+            error("exspected simple or array type");
+            break;
+    }
+
+    *returnType = *tmpType;
+    free(tmpType);
+ * */
+
+    free(integerType);
+    free(indexType);
+    free(varType);
+}
+
+
+static void checkMemberVar(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Absyn *object = node->u.memberVar.object;
+    Sym *name = node->u.memberVar.name;
+    Entry *varEntry;
+    Type *objectType = allocate(sizeof(Type));
+    Type *actClassType;
+
+
+    /* determine type of object */
+    checkNode(object, fileTable,localTable, actClass, classTable,
+            globalTable, breakAllowed, objectType, pass);
+
+    if (objectType->kind == TYPE_KIND_VOID) {
+        error("'void' does not have any fields in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+    if (objectType->kind == TYPE_KIND_NIL) {
+        error("'nil' does not have any fields in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+    /* lookup the name of the membervar in object's class table */
+    varEntry = lookupMember(objectType->u.simpleType.class, node->u.simpleVar.name, ENTRY_KIND_VARIABLE);
+
+    if ( varEntry == NULL ) {
+        error("field '%s' not found in '%s' on line %d",
+                symToString(node->u.simpleVar.name),
+                node->file,
+                node->line);
+    }
+
+
+    if ( ! varEntry->u.variableEntry.isPublic ) {
+        actClassType = newSimpleType(actClass);
+/*        if ( ! isSameOrSubtypeOf(actClassType, varEntry->u.variableEntry.type) ) {*/
+        if ( ! isSameOrSubtypeOf(actClassType, objectType) ) {
+            error("field '%s' is not public in '%s' on line %d",
                     symToString(node->u.simpleVar.name),
                     node->file,
                     node->line);
         }
-        
-        *returnType = *(newSimpleType(varEntry->u.classEntry.class));
+        free(actClassType);
     }
+
+    if ( objectType->kind == TYPE_KIND_ARRAY ) {
+        error("arrays do not have any fields in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
+    if ( varEntry->u.variableEntry.isStatic ) {
+        /* if field is static
+         * then the object type must be a static type */
+        if ( ! objectType->isStatic ) {
+            error("static field '%s' can only be used with a class as object in '%s' on line %d",
+                    symToString(node->u.simpleVar.name),
+                    node->file,
+                    node->line);
+        }
+    } else {
+        /* if field is not static 
+         * then the objectType must be a non-static type */
+        if ( objectType->isStatic ) {
+/*        if ( ! isStaticTypeOf(objectType, varEntry->u.variableEntry.type ) ) {*/
+            error("non-static field '%s' cannot be used with a class as object in '%s' on line %d",
+                symToString(node->u.simpleVar.name),
+                node->file,
+                node->line);
+        }
+
+    }
+
+    *returnType = *(varEntry->u.variableEntry.type);
+
+    free(objectType);
 }
+
 
 static void checkIfStm1(
         Absyn *node,
@@ -1328,13 +1702,6 @@ static void checkCallStm(
         Type *returnType,
         int pass) {
 
-    /*
-     * internals of callstm
-     * node->u.callStm.args
-     * node->u.callStm.name
-     * node->u.callStm.rcvr
-     */
-
     Type *rcvrType = allocate(sizeof(Type));
     Absyn *rcvrNode = node->u.callStm.rcvr;
     Entry *methodEntry;
@@ -1359,6 +1726,19 @@ static void checkCallStm(
         error("'nil' does not have any methods in '%s' on line %d",
                 node->file,
                 node->line);
+    }
+
+    if ( actMethod->u.methodEntry.isStatic ) {
+        if ( rcvrNode->type == ABSYN_SELFEXP ) {
+            error("the current receiver 'self' is not available in '%s' on line %d",
+                node->file,
+                node->line);
+        }
+        if ( rcvrNode->type == ABSYN_SUPEREXP ) {
+            error("the current receiver 'super' is not available in '%s' on line %d",
+                node->file,
+                node->line);
+        }
     }
 
     /* check if the receiver is an arrayVar
@@ -1395,7 +1775,7 @@ static void checkCallStm(
                 node->line);
     }
     
-    /* if actual class is not same or subclass of receivers's type 
+    /* if actual class is not same or subclass of receivers's class
      * then the method must be public
      * otherwise it cannot be seen in this context */
     if ( ! methodEntry->u.methodEntry.isPublic) {
@@ -1511,21 +1891,6 @@ static void checkBinOpExp(
         Type *returnType,
         int pass) {
 
-/*
-#define ABSYN_BINOP_LOR		0
-#define ABSYN_BINOP_LAND	1
-#define ABSYN_BINOP_EQ		2
-#define ABSYN_BINOP_NE		3
-#define ABSYN_BINOP_LT		4
-#define ABSYN_BINOP_LE		5
-#define ABSYN_BINOP_GT		6
-#define ABSYN_BINOP_GE		7
-#define ABSYN_BINOP_ADD		8
-#define ABSYN_BINOP_SUB		9
-#define ABSYN_BINOP_MUL		10
-#define ABSYN_BINOP_DIV		11
-#define ABSYN_BINOP_MOD		12
-*/
     Entry *booleanEntry = lookupClass(fileTable, globalTable, newSym("Boolean"));
     Type *booleanType = newSimpleType(booleanEntry->u.classEntry.class);
     Entry *integerEntry = lookupClass(fileTable, globalTable, newSym("Integer"));
@@ -1577,6 +1942,9 @@ static void checkBinOpExp(
                         node->file,
                         node->line);
             }
+
+            *returnType = *booleanType;
+
             break;
         case ABSYN_BINOP_EQ:
         case ABSYN_BINOP_NE:
@@ -1628,6 +1996,43 @@ static void checkBinOpExp(
                             node->line);
                 }
             }
+
+            *returnType = *booleanType;
+
+            break;
+        case ABSYN_BINOP_ADD:
+        case ABSYN_BINOP_SUB:
+        case ABSYN_BINOP_MUL:
+        case ABSYN_BINOP_DIV:
+        case ABSYN_BINOP_MOD:
+            /* check if left operand is integer */
+            if (leftType->kind == TYPE_KIND_SIMPLE) {
+                if ( ! isSameOrSubtypeOf(leftType, integerType) ) {
+                    error("left operand of arithmetic expression must be an Integer in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            } else {
+                error("left operand of arithmetic expression must be an Integer in '%s' on line %d",
+                        node->file,
+                        node->line);
+            }
+            
+            /* check if right operand is integer */
+            if (rightType->kind == TYPE_KIND_SIMPLE) {
+                if ( ! isSameOrSubtypeOf(rightType, integerType) ) {
+                    error("right operand of arithmetic expression must be an Integer in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            } else {
+                error("right operand of arithmetic expression must be an Integer in '%s' on line %d",
+                        node->file,
+                        node->line);
+            }
+
+            *returnType = *integerType;
+
             break;
         default:
             error("You found an unexspected BinOp: %d", op);
@@ -1636,6 +2041,144 @@ static void checkBinOpExp(
 
     free(leftType);
     free(rightType);
+}
+
+static void checkUnOpExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    
+    Entry *integerEntry = lookupClass(fileTable, globalTable, newSym("Integer"));
+    Type *integerType = newSimpleType(integerEntry->u.classEntry.class);
+    Entry *booleanEntry = lookupClass(fileTable, globalTable, newSym("Boolean"));
+    Type *booleanType = newSimpleType(booleanEntry->u.classEntry.class);
+
+    int op = node->u.unopExp.op;
+    Absyn *right = node->u.unopExp.right;
+
+    Type *rightType = allocate(sizeof(Type));
+
+    switch(op) {
+        case ABSYN_UNOP_LNOT:
+            /* determine type of right*/
+            checkNode(right, fileTable, localTable, actClass, classTable,
+                    globalTable, breakAllowed, rightType, pass);
+
+            /* check if right operand is integer */
+            if (rightType->kind == TYPE_KIND_SIMPLE) {
+                if ( ! isSameOrSubtypeOf(rightType, booleanType) ) {
+                    error("operand of unary '!' must be a Boolean in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            } else {
+                error("operand of unary '!' must be a Boolean in '%s' on line %d",
+                        node->file,
+                        node->line);
+            }
+
+            *returnType = *booleanType;
+            break;
+        case ABSYN_UNOP_MINUS:
+        case ABSYN_UNOP_PLUS:
+            /* determine type of right*/
+            checkNode(right, fileTable, localTable, actClass, classTable,
+                    globalTable, breakAllowed, rightType, pass);
+
+            /* check if right operand is integer */
+            if (rightType->kind == TYPE_KIND_SIMPLE) {
+                if ( ! isSameOrSubtypeOf(rightType, integerType) ) {
+                    error("operand of unary '+' or '-' must be an Integer in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            } else {
+                error("operand of unary '+' or '-' must be an Integer in '%s' on line %d",
+                        node->file,
+                        node->line);
+            }
+
+            *returnType = *integerType;
+            break;
+        default:
+            error("You found an unexspected UnOp: %d", op);
+            break;
+    }
+    
+    free(integerType);
+    free(booleanType);
+    free(rightType);
+}
+
+static void checkInstanceOfExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Absyn *exp = node->u.instofExp.exp;
+    Absyn *type = node->u.instofExp.type;
+    
+    Type expType;
+    Type typeType;
+
+    /* determine type of exp */
+    checkNode(exp, fileTable, localTable, actClass, classTable,
+            globalTable, breakAllowed, &expType, pass);
+    /* determine type of type */
+    checkNode(type, fileTable, localTable, actClass, classTable,
+            globalTable, breakAllowed, &typeType, pass);
+
+    if( ! isStaticTypeOf(&typeType, &expType)) {
+        error("'instanceof' has inconvertible types in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+    
+}
+
+
+static void checkCastExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    Absyn *exp = node->u.castExp.exp;
+    Absyn *type = node->u.instofExp.type;
+
+    Type expType;
+    Type typeType;
+
+    /* determine type of exp */
+    checkNode(exp, fileTable, localTable, actClass, classTable,
+            globalTable, breakAllowed, &expType, pass);
+    /* determine type of type */
+    checkNode(type, fileTable, localTable, actClass, classTable,
+            globalTable, breakAllowed, &typeType, pass);
+
+    if( ! isStaticTypeOf(&typeType, &expType) ) {
+        error("'castto' has inconvertible types in '%s' on line %d",
+                node->file,
+                node->line);
+    }
+
 }
 
 
@@ -1721,6 +2264,25 @@ static void checkSelfExp(
 }
 
 
+static void checkSuperExp(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+
+    /* lookup and return type of superExp */
+    Entry *tmpEntry = lookupClass(fileTable, globalTable, actClass->superClass->name);
+    Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
+    *returnType = *tmpType;
+    free(tmpType);
+}
+
+
 static void checkNewExp(
         Absyn *node,
         Table **fileTable,
@@ -1778,6 +2340,19 @@ static void checkCallExp(
      * node->u.callExp.name
      * node->u.callExp.rcvr
      */
+}
+
+static void checkAsmStm(
+        Absyn *node,
+        Table **fileTable,
+        Table *localTable,
+        Class *actClass,
+        Table *classTable,
+        Table *globalTable,
+        boolean breakAllowed,
+        Type *returnType,
+        int pass) {
+    /* we just trust it */
 }
 
 

@@ -29,6 +29,7 @@ void showClass(Class *class, int pos);
 
 typedef struct {
   int kind;
+  int isStatic;                 /* for static type evaluations */
   union {
     struct {
       int dummy;		/* empty struct not allowed in C */
@@ -50,8 +51,10 @@ typedef struct {
 Type *newVoidType(void);
 Type *newNilType(void);
 Type *newSimpleType(Class *class);
+Type *newStaticSimpleType(Class *class);
 Type *newArrayType(Class *base, int dims);
 boolean isSameOrSubtypeOf(Type *type1, Type *type2);
+boolean isStaticTypeOf(Type *type1, Type *type2);
 void showType(Type *type);
 
 
