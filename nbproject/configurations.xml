@@ -2,6 +2,48 @@
 <configurationDescriptor version="69">
   <logicalFolder name="root" displayName="root" projectFiles="true">
     <df name="njc-oo" root=".">
+      <df name="docs">
+      </df>
+      <df name="test_fm">
+        <in>_test11.nj</in>
+        <in>_test11.ref</in>
+        <in>_test22.nj</in>
+        <in>_test22.ref</in>
+        <in>test03.nj</in>
+        <in>test03.ref</in>
+        <in>test04.nj</in>
+        <in>test04.ref</in>
+        <in>test05.nj</in>
+        <in>test05.ref</in>
+        <in>test06.nj</in>
+        <in>test06.ref</in>
+        <in>test07.nj</in>
+        <in>test07.ref</in>
+        <in>test08.nj</in>
+        <in>test08.ref</in>
+        <in>test09.nj</in>
+        <in>test09.ref</in>
+        <in>test10.nj</in>
+        <in>test10.ref</in>
+        <in>test12.nj</in>
+        <in>test12.ref</in>
+        <in>test13.nj</in>
+        <in>test13.ref</in>
+        <in>test14.nj</in>
+        <in>test14.ref</in>
+        <in>test15.nj</in>
+        <in>test15.ref</in>
+        <in>test16.nj</in>
+        <in>test16.ref</in>
+        <in>test20.nj</in>
+        <in>test20.ref</in>
+        <in>test21.nj</in>
+        <in>test21.ref</in>
+        <in>test22.nj</in>
+        <in>test22.ref</in>
+        <in>test23.nj</in>
+        <in>test23.ref</in>
+      </df>
       <in>absyn.c</in>
       <in>absyn.h</in>
       <in>common.h</in>
@@ -40,15 +82,15 @@
     <conf name="Default" type="0">
       <toolsSet>
         <developmentServer>localhost</developmentServer>
-        <compilerSet>GNU|GNU</compilerSet>
-        <platform>2</platform>
+        <compilerSet>Cygwin_4.x|Cygwin_4.x</compilerSet>
+        <platform>3</platform>
       </toolsSet>
       <makefileType>
         <makeTool>
           <buildCommandWorkingDir>.</buildCommandWorkingDir>
           <buildCommand>$(MAKE) -f Makefile</buildCommand>
           <cleanCommand>$(MAKE) -f Makefile clean</cleanCommand>
-          <executablePath></executablePath>
+          <executablePath>./njc.exe</executablePath>
           <cTool>
             <incDir>
               <pElem>.</pElem>

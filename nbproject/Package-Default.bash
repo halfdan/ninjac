@@ -6,13 +6,13 @@
 
 # Macros
 TOP=`pwd`
-CND_PLATFORM=GNU-Linux-x86
+CND_PLATFORM=Cygwin_4.x-Windows
 CND_CONF=Default
 CND_DISTDIR=dist
 NBTMPDIR=build/${CND_CONF}/${CND_PLATFORM}/tmp-packaging
 TMPDIRNAME=tmp-packaging
-OUTPUT_PATH=MissingOutputInProject
-OUTPUT_BASENAME=MissingOutputInProject
+OUTPUT_PATH=./njc.exe
+OUTPUT_BASENAME=njc.exe
 PACKAGE_TOP_DIR=njc-oo/
 
 # Functions

@@ -843,7 +843,12 @@ static void showMethodDec(Absyn *node, int n) {
   indent(n + 1);
   say(symToString(node->u.methodDec.name));
   say(",\n");
-  showNode(node->u.methodDec.retType, n + 1);
+  if(NULL != node->u.methodDec.retType)
+      showNode(node->u.methodDec.retType, n + 1);
+  else {
+      indent(n+1);
+      say("<constructor>");
+  }
   say(",\n");
   showNode(node->u.methodDec.params, n + 1);
   say(",\n");

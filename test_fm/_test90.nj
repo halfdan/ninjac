@@ -1,0 +1,15 @@
+//
+// constructor with wrong name
+//
+
+
+public class Main extends Object {
+
+  public Foo() {
+  }
+
+  public static void main() {
+    
+  }
+
+}

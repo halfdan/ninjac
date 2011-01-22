@@ -1,0 +1,37 @@
+public class Point extends Object {
+    Integer x;
+    Integer y;
+
+    void move(Point delta) {
+        x = x+delta.x;
+        y = y+delta.y;
+    }
+
+    void mirror() {
+        x = -x;
+        y = -y;
+    }
+}
+
+class ColoredPoint extends Point {
+    Integer color;
+
+    public ColoredPoint(Integer x, Integer y) {
+        self.x = x;
+        self.y = y;
+    }
+
+    void mirror() {
+        x = -x;
+        y = -y;
+        color = 42;
+    }
+}
+
+public class Main extends Object {
+    public static void main() {
+        local Point cp;
+        cp = new ColoredPoint(10,20);
+        cp.mirror();
+    }
+}

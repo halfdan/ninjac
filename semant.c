@@ -646,8 +646,21 @@ static void checkMethodDec(
         case 1:            
             break;
         case 2:
-            /* Determine the type of the field */
-            returnType = lookupTypeFromAbsyn(node->u.methodDec.retType, fileTable);
+            if(NULL != node->u.methodDec.retType) {
+                /* Determine the type of the field */
+                returnType = lookupTypeFromAbsyn(node->u.methodDec.retType, fileTable);
+            }
+            else {
+                /* A constructor method does not have a return type */
+                returnType = NULL;
+                /* Does the constructor have the same name as the class its in? */
+                if(actClass->name != node->u.methodDec.name) {
+                    error("constructor method must have the same name as the class in '%s' on line %d",
+                            node->file,
+                            node->line);
+                }
+            }
+            
 
             /* Build up the TypeList of paramTypes starting with an emptyTypeList */
             paramTypes = emptyTypeList();
@@ -1091,7 +1104,10 @@ static void checkSimpleVar(
         varEntry = lookupClass(fileTable, globalTable, node->u.simpleVar.name);
 
         if (varEntry == NULL) {
-            error("error in checkSimpleVar!! this should never happen!");
+            error("undefined variable '%s' in '%s' on line %d",
+                    symToString(node->u.simpleVar.name),
+                    node->file,
+                    node->line);
         }
         
         *returnType = *(newSimpleType(varEntry->u.classEntry.class));

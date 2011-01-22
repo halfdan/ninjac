@@ -1,0 +1,15 @@
+//
+// constructor with right name
+//
+
+
+public class Main extends Object {
+
+  public Main() {
+  }
+
+  public static void main() {
+
+  }
+
+}
