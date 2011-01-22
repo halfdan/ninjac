@@ -35,7 +35,7 @@ static Absyn *p;
 %token	<noVal>		LPAREN RPAREN LCURL RCURL LBRACK RBRACK
 %token	<noVal>		ASGN COMMA SEMIC DOT
 %token	<noVal>		LOGOR LOGAND LOGNOT
-%token	<noVal>		EQ NE LT LE GT GE
+%token	<noVal>		EQ NE LT LE GT GE REQ RNE
 %token	<noVal>		PLUS MINUS STAR SLASH PERCENT
 %token	<intVal>	INTLIT
 %token	<intVal>	BOOLEANLIT
@@ -486,6 +486,16 @@ equ_exp			: rel_exp
 			  {
 			    $$ = newBinopExp($2.file, $2.line,
 			                     ABSYN_BINOP_NE, $1, $3);
+			  }
+                        | equ_exp REQ rel_exp
+			  {
+			    $$ = newBinopExp($2.file, $2.line,
+			                     ABSYN_BINOP_REQ, $1, $3);
+			  }
+			| equ_exp RNE rel_exp
+			  {
+			    $$ = newBinopExp($2.file, $2.line,
+			                     ABSYN_BINOP_RNE, $1, $3);
 			  }
 			;
 

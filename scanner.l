@@ -265,6 +265,18 @@ asm                     {
 			  return NE;
 			}
 
+\=\=\=			{
+			  yylval.noVal.file = fileName;
+			  yylval.noVal.line = lineNumber;
+			  return REQ;
+			}
+
+\!\=\=			{
+			  yylval.noVal.file = fileName;
+			  yylval.noVal.line = lineNumber;
+			  return RNE;
+			}
+
 \<			{
 			  yylval.noVal.file = fileName;
 			  yylval.noVal.line = lineNumber;

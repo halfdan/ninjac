@@ -57,15 +57,17 @@
 #define ABSYN_BINOP_LAND	1
 #define ABSYN_BINOP_EQ		2
 #define ABSYN_BINOP_NE		3
-#define ABSYN_BINOP_LT		4
-#define ABSYN_BINOP_LE		5
-#define ABSYN_BINOP_GT		6
-#define ABSYN_BINOP_GE		7
-#define ABSYN_BINOP_ADD		8
-#define ABSYN_BINOP_SUB		9
-#define ABSYN_BINOP_MUL		10
-#define ABSYN_BINOP_DIV		11
-#define ABSYN_BINOP_MOD		12
+#define ABSYN_BINOP_REQ         4
+#define ABSYN_BINOP_RNE         5
+#define ABSYN_BINOP_LT		6
+#define ABSYN_BINOP_LE		7
+#define ABSYN_BINOP_GT		8
+#define ABSYN_BINOP_GE		9
+#define ABSYN_BINOP_ADD         10
+#define ABSYN_BINOP_SUB		11
+#define ABSYN_BINOP_MUL		12
+#define ABSYN_BINOP_DIV		13
+#define ABSYN_BINOP_MOD		14
 
 #define ABSYN_UNOP_PLUS		0
 #define ABSYN_UNOP_MINUS	1
