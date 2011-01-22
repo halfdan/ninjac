@@ -1,0 +1,19 @@
+//
+// Initialization of 2-dim array.
+//
+
+
+public class Main extends Object {
+
+  public static void main() {
+	Object[][] obj;
+        Integer i;
+        i = 0;
+        obj = new Object[5][];
+        while(i < obj.length) {
+            obj[i] = new Object[5];
+            i = i + 1;
+        }
+  }
+
+}

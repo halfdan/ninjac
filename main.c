@@ -16,6 +16,7 @@
 #include "table.h"
 #include "parser.h"
 #include "semant.h"
+#include "codegen.h"
 
 #define VERSION		7
 
@@ -138,7 +139,17 @@ int main(int argc, char *argv[]) {
   /* do semantic analysis */
   fileTables = check(fileTrees, numInFiles, optionTables);
 
+  /* If there is a filename open it, else use STDOUT */
+  if(NULL != outFileName)
+      outFile = fopen(outFileName, "w");
+  else
+      outFile = (FILE*)stdout;
   /* generate code */
+  generateCode(fileTrees, numInFiles, fileTables, outFile);
+
+  if(NULL != outFileName)
+      fclose(outFile);
+
   /* done */
   return 0;
 }
