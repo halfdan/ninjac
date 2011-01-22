@@ -30,7 +30,7 @@ static Absyn *p;
 }
 
 %token	<noVal>		BREAK CASTTO CLASS DO ELSE EXTENDS
-%token	<noVal>		IF INSTANCEOF LOCAL NEW NIL PUBLIC
+%token	<noVal>		IF INSTANCEOF LOCAL NEW NIL PUBLIC ASM
 %token	<noVal>		RETURN SELF STATIC SUPER VOID WHILE
 %token	<noVal>		LPAREN RPAREN LCURL RCURL LBRACK RBRACK
 %token	<noVal>		ASGN COMMA SEMIC DOT
@@ -41,6 +41,7 @@ static Absyn *p;
 %token	<intVal>	BOOLEANLIT
 %token	<intVal>	CHARLIT
 %token	<stringVal>	STRINGLIT
+%token	<stringVal>	ASMCODE
 %token	<stringVal>	IDENT
 
 %type	<node>		class_dec_list
@@ -68,6 +69,7 @@ static Absyn *p;
 %type	<node>		break_stm
 %type	<node>		return_stm
 %type	<node>		call_stm
+%type	<node>		asm_stm
 %type	<node>		arg_list
 %type	<node>		non_empty_arg_list
 %type	<node>		exp
@@ -333,6 +335,10 @@ stm			: empty_stm
 			  {
 			    $$ = $1;
 			  }
+                        | asm_stm
+                          {
+                            $$ = $1;
+                          }
 			;
 
 empty_stm		: SEMIC
@@ -413,6 +419,11 @@ call_stm		: IDENT LPAREN arg_list RPAREN SEMIC
 			                    $5);
 			  }
 			;
+
+asm_stm                 : ASM LCURL ASMCODE RCURL
+                          {
+                            $$ = newAsmStm($1.file, $1.line, $3.val);
+                          }
 
 arg_list		: /* empty */
 			  {

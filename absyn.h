@@ -51,6 +51,7 @@
 #define ABSYN_VARLIST		41
 #define ABSYN_STMLIST		42
 #define ABSYN_EXPLIST		43
+#define ABSYN_ASMSTM            44
 
 #define ABSYN_BINOP_LOR		0
 #define ABSYN_BINOP_LAND	1
@@ -155,6 +156,9 @@ typedef struct absyn {
     struct {
       int dummy;		/* empty struct not allowed in C */
     } retStm;
+    struct {                    /* asm-Stm */
+      char* code;
+    } asmStm;
     struct {
       struct absyn *exp;	/* return expression */
     } retExpStm;
@@ -324,6 +328,7 @@ Absyn *newVarExp(char *file, int line,
                  Absyn *var);
 Absyn *newCallExp(char *file, int line,
                   Sym *name, Absyn *rcvr, Absyn *args);
+Absyn *newAsmStm(char *file, int line, char *code);
 Absyn *newNewExp(char *file, int line,
                  Sym *type, Absyn *args);
 Absyn *newNewArrayExp(char *file, int line,

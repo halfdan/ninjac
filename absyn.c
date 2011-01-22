@@ -295,6 +295,16 @@ Absyn *newCallStm(char *file, int line,
   return node;
 }
 
+Absyn *newAsmStm(char *file, int line, char *code) {
+    Absyn *node;
+    node = (Absyn *)allocate(sizeof(Absyn));
+    node->type = ABSYN_ASMSTM;
+    node->file = file;
+    node->line = line;
+    node->u.asmStm.code = code;
+    return node;
+}
+
 
 Absyn *newBinopExp(char *file, int line,
                    int op, Absyn *left, Absyn *right) {
@@ -1005,6 +1015,14 @@ static void showCallStm(Absyn *node, int n) {
   say(")");
 }
 
+static void showAsmStm(Absyn *node, int n) {
+  indent(n);
+  say("AsmStm(\n");
+  indent(n + 1);
+  sayString(node->u.asmStm.code);
+  say(")");
+}
+
 
 static void showBinopExp(Absyn *node, int n) {
   indent(n);
@@ -1381,6 +1399,9 @@ static void showNode(Absyn *node, int indent) {
       break;
     case ABSYN_CALLSTM:
       showCallStm(node, indent);
+      break;
+    case ABSYN_ASMSTM:
+      showAsmStm(node, indent);
       break;
     case ABSYN_BINOPEXP:
       showBinopExp(node, indent);

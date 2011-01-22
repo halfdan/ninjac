@@ -1,0 +1,20 @@
+//
+// main-method with asm-Statement
+//
+
+
+public class Main extends Object {
+
+  public Main() {
+  }
+
+  public static void main() {
+	asm {%
+            pushc 2 
+            pushc 3 
+            add
+            wrint
+        %}
+  }
+
+}
