@@ -1,0 +1,50 @@
+_start:
+    call _prolog
+    call CLASS_Main_main
+    call _exit
+
+// Prolog
+_prolog:
+    asf 0
+    // Konstruktion Metaklassen
+    // CLASS_Main
+    new     1
+    .addr   VMT_CLASS_Auto
+    popg    0
+    
+    rsf
+    ret
+
+// Exit
+_exit:
+    asf     0
+    halt
+    rsf
+    ret
+
+// VMTs
+VMT_Object:
+
+VMT_CLASS_Object:
+
+VMT_Main:
+
+VMT_CLASS_Main:
+.addr CLASS_Main_main
+
+// Classes
+// class Object
+
+// class CLASS_Object
+
+// class Main
+
+// class CLASS_Main
+CLASS_Main_main:
+    asf     0
+    rsf     0
+    ret
+
+
+
+

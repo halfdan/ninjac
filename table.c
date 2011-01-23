@@ -12,6 +12,7 @@
 #include "sym.h"
 #include "vmt.h"
 #include "types.h"
+#include "instance.h"
 #include "table.h"
 
 

@@ -7,6 +7,7 @@
 #include "absyn.h"
 #include "vmt.h"
 #include "types.h"
+#include "instance.h"
 #include "table.h"
 #include "absyn.h"
 
@@ -38,6 +39,7 @@
  * function like the actual class. This is not because we are too lazy to implement
  * a new parameter but because we have no 'Type Method' */
 Entry *actMethod;
+/* same with localOffset*/
 int localOffset;
 
 static void checkNode(
@@ -597,7 +599,6 @@ static void traverseTable(Class *class, char *filename, VMT *vmt) {
 }
 
 
-/*static void makeVMT(Sym *className, Table *symTab) {*/
 static void makeVMT(Class *class, char *fileName) {
     VMT *vmt;
 
@@ -615,10 +616,6 @@ static void makeVMT(Class *class, char *fileName) {
 
     traverseTable(class, fileName, vmt);
     class->vmt = vmt;
-}
-
-static void makeInstanceVariableOffsets(Class *class, char *fileName) {
-    
 }
 
 static void checkClassDec(
@@ -734,7 +731,8 @@ static void checkClassDec(
             /* Lookup current class entry */
             classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             makeVMT(classEntry->u.classEntry.class, node->file);
-            makeInstanceVariableOffsets(classEntry->u.classEntry.class, node->file);
+            makeInstanceVariableOffsets(classEntry->u.classEntry.class,
+                    node->file);
             break;
         default: {
             error("This should never happen! You have found an invalid pass.");
@@ -766,7 +764,7 @@ static void checkFieldDec(
         case 2:
             /* if defined in one of superclasses either as method or field */
             varTmpEntry = lookupMember(actClass->superClass, node->u.fieldDec.name, ENTRY_KIND_VARIABLE);
-            if(varTmpEntry != NULL) {
+            if(varTmpEntry != NULL && !varTmpEntry->u.variableEntry.isStatic) {
                 error("redeclaration of field '%s' (defined in a superclass of '%s') in file '%s' on line %d",
                         node->u.fieldDec.name->string,
                         actClass->name->string,
@@ -884,7 +882,9 @@ static void checkMethodDec(
                         localList = localList->u.varList.tail,
                         localDec = localList->u.varList.head) {
                     /* Check the variable declaration */
-                    checkVarDec(localDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                    checkVarDec(localDec, fileTable, localTable,
+                            actClass, classTable, globalTable,
+                            breakAllowed, returnType, pass);
                 }
             }
 
@@ -2537,7 +2537,8 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     if ( NULL == mainClassEntry ) {
         error("public class '%s' is missing.", mainClass);
     } else {
-        mainMethodEntry = lookup(mainClassEntry->u.classEntry.class->mbrTable, newSym("main"), ENTRY_KIND_METHOD);
+        mainMethodEntry = lookup(mainClassEntry->u.classEntry.class->mbrTable,
+                newSym("main"), ENTRY_KIND_METHOD);
         if ( NULL == mainMethodEntry ) {
             error("public class '%s' does not contain a method 'main'.", mainClass);
         } else {

@@ -1,14 +1,13 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
 
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
 #include "vmt.h"
 #include "types.h"
+#include "instance.h"
 #include "absyn.h"
 
 

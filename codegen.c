@@ -8,6 +8,7 @@
 #include "vmt.h"
 #include "absyn.h"
 #include "types.h"
+#include "instance.h"
 #include "table.h"
 #include "codegen.h"
 

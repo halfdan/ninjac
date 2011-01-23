@@ -12,6 +12,7 @@
 #include "sym.h"
 #include "vmt.h"
 #include "types.h"
+#include "instance.h"
 
 
 /**************************************************************/
@@ -26,7 +27,8 @@ Class *newClass(boolean isPublic, Sym *name,
   class->name = name;
   class->superClass = superClass;
   class->mbrTable = mbrTable;
-  class->vmt = NULL;
+  class->vmt = newEmptyVMT();
+  class->attibuteList = newEmptyInstanceVar();
   return class;
 }
 

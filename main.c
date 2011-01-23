@@ -14,6 +14,7 @@
 #include "vmt.h"
 #include "scanner.h"
 #include "types.h"
+#include "instance.h"
 #include "table.h"
 #include "parser.h"
 #include "semant.h"
