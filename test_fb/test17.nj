@@ -2,13 +2,13 @@ public class Main extends Object {
     public static void main() {
         local Auto vw;
         local Auto vw2;
-//        local Auto bmw;
-//        local LKW man;
+        local Auto bmw;
+        local LKW man;
 
         vw = new Auto(45);
-        vw = new Auto(45);
-//        bmw = new Auto(107);
-//        man = new LKW(1000);
+        vw2 = new Auto(45);
+        bmw = new Auto(107);
+        man = new LKW(1000);
         write(Auto.produziert);
     }
 }

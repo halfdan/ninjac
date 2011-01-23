@@ -38,6 +38,7 @@
  * function like the actual class. This is not because we are too lazy to implement
  * a new parameter but because we have no 'Type Method' */
 Entry *actMethod;
+int localOffset;
 
 static void checkNode(
         Absyn *node,
@@ -728,6 +729,7 @@ static void checkClassDec(
             /* Lookup current class entry */
             classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             makeVMT(classEntry->u.classEntry.class, node->file);
+            /* makeVMT(classEntry->u.classEntry.class, node->file); */
             break;
         default: {
             error("This should never happen! You have found an invalid pass.");
@@ -868,6 +870,8 @@ static void checkMethodDec(
 
             /* Does the method contain any locals? */
             localList = node->u.methodDec.locals;
+            /* initialize the local offset with 0 */
+            localOffset = 0;
             if (!localList->u.varList.isEmpty) {
                 /* Loop over all local variables in the list */
                 for(localDec = localList->u.varList.head;
@@ -1067,6 +1071,7 @@ static void checkVarDec(
                         node->file,
                         node->line);
             }
+            variableEntry->u.variableEntry.offset = localOffset++;
             break;
         case 3:
             break;
@@ -2506,6 +2511,8 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
          checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
                 globalTable, FALSE, returnType, 4);
     }
+
+    /* sixth pass: generate offsets for instance variables */
 
     if (showSymbolTables) {
         printf("## Global Symboltable ##\n");
