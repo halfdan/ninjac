@@ -24,6 +24,7 @@ typedef struct {
       Type *retType;		/* return type */
       TypeList *paramTypes;	/* parameter types */
       struct table *localTable;	/* symbol table for local variables */
+      int numLocals;            /* Number of local variables */
     } methodEntry;
     struct {
       boolean isLocal;		/* true iff this is a local variable */
@@ -32,6 +33,7 @@ typedef struct {
       boolean isStatic;		/* true iff this is a class variable */
 				/* always false for local variables */
       Type *type;		/* the type of the variable */
+      int offset;               /* Offset of the variable entry */
     } variableEntry;
   } u;
 } Entry;
