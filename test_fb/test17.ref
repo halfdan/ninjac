@@ -1,0 +1,139 @@
+_start:
+    call _prolog
+    call CLASS_Main_main
+    call _exit
+
+// Prolog
+_prolog:
+    asf 0
+    // Konstruktion Metaklassen
+    // CLASS_Auto
+    new     1
+    .addr VMT_CLASS_Auto
+    popg    0
+    rsf
+    ret
+
+// Exit
+_exit:
+    asf     0
+    halt
+    rsf
+    ret
+
+// VMTs
+VMT_Class:
+
+VMT_CLASS_Object:
+
+VMT_Object:
+
+VMT_CLASS_Main:
+.addr CLASS_Main_main
+
+VMT_Main:
+
+VMT_CLASS_Auto:
+.addr CLASS_Auto_errmittlePS
+
+VMT_Auto:
+.addr Auto_Auto
+.addr Auto_drosseln
+.addr Auto_aufmotzen
+
+VMT_CLASS_LKW:
+.addr CLASS_Auto_errmittlePS
+
+VMT_LKW:
+.addr Auto_Auto
+.addr Auto_drosseln
+.addr Auto_aufmotzen
+.addr LKW_LKW
+.addr LKW_beladen
+.addr LKW_entladen
+// VMTs Ende //
+
+// Klassen //
+
+// CLASS_Object
+// nix
+
+// Object
+// nix
+
+// CLASS_Main
+CLASS_Main_main:
+    //    local Auto vw;
+    //    local Auto bmw;
+    //    local LKW man;
+    asf     3
+
+    //    vw = new Auto(45);
+    new     1
+    .addr   VMT_Auto
+    popl    0
+    pushl   0
+    dup
+    pushc   45
+    vmcall  2,0
+    //    bmw = new Auto(107);
+    //new     1
+    //.addr   VMT_Auto
+    //popl    0
+    //    man = new LKW(1000);
+    //new     2
+    //.addr   VMT_LKW
+
+
+    pushg   0
+    getf    0
+    wrint
+
+    rsf
+    ret
+
+// Main
+// nix
+
+// CLASS_Auto
+CLASS_Auto_errmittlePS:
+    // kommt noch
+
+// Auto
+Auto_Auto:
+//    public Auto(Integer leistung) {
+//        self.leistung = leistung;
+//        Auto.autos_produziert = Auto.autos_produziert + 1;
+//    }
+    asf     0
+    //        self.leistung = leistung;
+    pushl   -3
+    pushl   -2
+    putf    0
+
+    //        Auto.autos_produziert = Auto.autos_produziert + 1;
+    pushg    0
+    pushg    0
+    getf    0
+    pushc   1
+    add
+    putf    0
+    
+    rsf
+    ret
+    
+Auto_drosseln:
+    // kommt noch
+Auto_aufmotzen:
+    // kommt noch
+
+// CLASS_LKW
+LKW_LKW:
+    // kommt noch
+LKW_beladen:
+    // kommt noch
+LKW_entladen:
+    // kommt noch
+
+
+

@@ -1,0 +1,57 @@
+public class Main extends Object {
+    public static void main() {
+        local Auto vw;
+//        local Auto bmw;
+//        local LKW man;
+
+        vw = new Auto(45);
+//        bmw = new Auto(107);
+//        man = new LKW(1000);
+        write(Auto.produziert);
+    }
+}
+
+public class Auto extends Object {
+    public Integer leistung;
+    public static Integer produziert;
+    
+    public Auto(Integer leistung) {
+        self.leistung = leistung;
+        Auto.autos_produziert = Auto.produziert + 1;
+    }
+    
+    public void drosseln(Integer leistungsmalus) {
+        self.leistung = self.leistung - leistungsmalus;
+    }
+
+    public void aufmotzen(Integer leistungsbonus) {
+        self.leistung = self.leistung + leistungsbonus;
+    }
+
+    public static Integer ermittlePS(Auto auto) {
+        return auto.leistung;
+    }
+}
+
+public class LKW extends Auto {
+    public Integer ladung;
+    public Integer kapazitaet;
+
+    public static Integer produziert;
+
+    public LKW(Integer kapazitaet) {
+        super.Auto(200);
+        self.kapazitaet = kapazitaet;
+        self.ladung = 0;
+        LKW.produziert = LKW.produziert + 1;
+    }
+
+    public void beladen(Integer zuladung) {
+        self.ladung = self.ladung + zuladung;
+    }
+
+    public void entladen(Integer entladung) {
+        self.ladung = self.ladung - entladung;
+    }
+}
+
