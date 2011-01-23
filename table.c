@@ -30,7 +30,7 @@ Entry *newClassEntry(Class *class) {
 
 Entry *newMethodEntry(boolean isPublic, boolean isStatic,
                       Type *retType, TypeList *paramTypes,
-                      Table *localTable) {
+                      Table *localTable, Class *class) {
   Entry *entry;
 
   entry = (Entry *) allocate(sizeof(Entry));
@@ -40,6 +40,7 @@ Entry *newMethodEntry(boolean isPublic, boolean isStatic,
   entry->u.methodEntry.retType = retType;
   entry->u.methodEntry.paramTypes = paramTypes;
   entry->u.methodEntry.localTable = localTable;
+  entry->u.classEntry.class = class;
   return entry;
 }
 

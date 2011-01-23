@@ -25,9 +25,10 @@ typedef struct {
       TypeList *paramTypes;	/* parameter types */
       struct table *localTable;	/* symbol table for local variables */
       int numLocals;            /* Number of local variables */
+      Class *class;             /* class where method is defined in */
     } methodEntry;
     struct {
-      boolean isLocal;		/* true iff this is a local variable */
+      boolean isLocal;		/* true if this is a local variable */
       boolean isPublic;		/* variable visibility outside of class */
 				/* always false for local variables */
       boolean isStatic;		/* true iff this is a class variable */
@@ -42,7 +43,7 @@ typedef struct {
 Entry *newClassEntry(Class *class);
 Entry *newMethodEntry(boolean isPublic, boolean isStatic,
                       Type *retType, TypeList *paramTypes,
-                      struct table *localTable);
+                      struct table *localTable, Class *class);
 Entry *newVariableEntry(boolean isLocal, boolean isPublic,
                         boolean isStatic, Type *type);
 void showEntry(Entry *entry);

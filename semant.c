@@ -617,6 +617,10 @@ static void makeVMT(Class *class, char *fileName) {
     class->vmt = vmt;
 }
 
+static void makeInstanceVariableOffsets(Class *class, char *fileName) {
+    
+}
+
 static void checkClassDec(
         Absyn *node,
         Table **fileTable,
@@ -726,10 +730,11 @@ static void checkClassDec(
         case 4:
             /* here will be dragons */
             /* here will be the creation of the virtual method table */
+            /* here will be the evaluation of the instance variable offsets */
             /* Lookup current class entry */
             classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             makeVMT(classEntry->u.classEntry.class, node->file);
-            /* makeVMT(classEntry->u.classEntry.class, node->file); */
+            makeInstanceVariableOffsets(classEntry->u.classEntry.class, node->file);
             break;
         default: {
             error("This should never happen! You have found an invalid pass.");
@@ -887,7 +892,8 @@ static void checkMethodDec(
                     node->u.methodDec.stat,
                     returnType /* Return type */,
                     paramTypes /* Param types*/,
-                    localTable /* Local table*/);
+                    localTable /* Local table*/,
+                    actClass);
 
             /* Add the entry to the classTable */
             if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
