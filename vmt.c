@@ -103,3 +103,11 @@ void showVMT(VMT* src, int indent) {
     printf("%d:\t%s_%s\n", src->offset, src->className, symToString(src->name));
     showVMT(src->next, indent);
 }
+
+void printVMT(FILE* file, VMT* vmt) {
+    while(!vmt->isEmpty) {
+        fprintf(file, ".addr\t%s_%s_%lx\n", vmt->className, symToString(vmt->name), djb2(vmt->fileName));
+        vmt = vmt->next;
+    }
+    fprintf(file, "\n");
+}

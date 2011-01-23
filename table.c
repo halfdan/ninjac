@@ -40,7 +40,7 @@ Entry *newMethodEntry(boolean isPublic, boolean isStatic,
   entry->u.methodEntry.retType = retType;
   entry->u.methodEntry.paramTypes = paramTypes;
   entry->u.methodEntry.localTable = localTable;
-  entry->u.classEntry.class = class;
+  entry->u.methodEntry.class = class;
   return entry;
 }
 
