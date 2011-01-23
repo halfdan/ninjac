@@ -1,9 +1,11 @@
 public class Main extends Object {
     public static void main() {
         local Auto vw;
+        local Auto vw2;
 //        local Auto bmw;
 //        local LKW man;
 
+        vw = new Auto(45);
         vw = new Auto(45);
 //        bmw = new Auto(107);
 //        man = new LKW(1000);
@@ -17,7 +19,7 @@ public class Auto extends Object {
     
     public Auto(Integer leistung) {
         self.leistung = leistung;
-        Auto.autos_produziert = Auto.produziert + 1;
+        Auto.produziert = Auto.produziert + 1;
     }
     
     public void drosseln(Integer leistungsmalus) {

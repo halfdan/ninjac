@@ -9,8 +9,14 @@ _prolog:
     // Konstruktion Metaklassen
     // CLASS_Auto
     new     1
-    .addr VMT_CLASS_Auto
+    .addr   VMT_CLASS_Auto
     popg    0
+    
+    // CLASS_LKW
+    new     1
+    .addr   VMT_CLASS_LKW
+    popg    1
+
     rsf
     ret
 
@@ -22,8 +28,6 @@ _exit:
     ret
 
 // VMTs
-VMT_Class:
-
 VMT_CLASS_Object:
 
 VMT_Object:
@@ -68,6 +72,16 @@ CLASS_Main_main:
     //    local LKW man;
     asf     3
 
+    //  initialisierung der statischen Variable von Auto
+    pushg   0
+    pushc   0
+    putf    0
+
+    //  initialisierung der statischen Variable von LKW
+    pushg   1
+    pushc   0
+    putf    0
+
     //    vw = new Auto(45);
     new     1
     .addr   VMT_Auto
@@ -76,15 +90,29 @@ CLASS_Main_main:
     dup
     pushc   45
     vmcall  2,0
-    //    bmw = new Auto(107);
-    //new     1
-    //.addr   VMT_Auto
-    //popl    0
-    //    man = new LKW(1000);
-    //new     2
-    //.addr   VMT_LKW
+    drop    2
 
+    //      bmw = new Auto(107);
+    new     1
+    .addr   VMT_Auto
+    popl    1
+    pushl   1
+    dup
+    pushc   45
+    vmcall  2,0
+    drop    2
 
+    //      man = new LKW(1000);
+    new     3
+    .addr   VMT_LKW
+    popl    0
+    pushl   0
+    dup
+    pushc   45
+    vmcall  2,3
+    drop    2
+
+    //      write(Auto.produziert);
     pushg   0
     getf    0
     wrint
@@ -129,7 +157,39 @@ Auto_aufmotzen:
 
 // CLASS_LKW
 LKW_LKW:
-    // kommt noch
+//      public LKW(Integer kapazitaet) {
+//        super.Auto(200);
+//        self.kapazitaet = kapazitaet;
+//        self.ladung = 0;
+//        LKW.produziert = LKW.produziert + 1;
+//    }
+    asf 0
+    //        super.Auto(200);
+    pushl   -3
+    pushc   200
+    call    Auto_Auto
+    drop    2
+
+    //        self.kapazitaet = kapazitaet;
+    pushl   -3
+    pushl   -2
+    putf    2
+
+    //        self.ladung = 0;
+    pushl   -3
+    pushc   0
+    putf    1
+
+    //        LKW.produziert = LKW.produziert + 1;
+    pushg   1
+    pushg   1
+    getf    0
+    pushc   1
+    add
+    putf    0
+
+    rsf
+    ret
 LKW_beladen:
     // kommt noch
 LKW_entladen:
