@@ -10,6 +10,7 @@
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
+#include "vmt.h"
 #include "types.h"
 #include "table.h"
 

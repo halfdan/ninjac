@@ -12,6 +12,7 @@ typedef struct class {
   Sym *name;			/* name of the class */
   struct class *superClass;	/* its superclass */
   struct table *mbrTable;	/* symbol table for class members */
+  VMT *vmt;                     /* virtual method table as linked list*/
 } Class;
 
 

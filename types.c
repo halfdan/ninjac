@@ -10,6 +10,7 @@
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
+#include "vmt.h"
 #include "types.h"
 
 
@@ -25,6 +26,7 @@ Class *newClass(boolean isPublic, Sym *name,
   class->name = name;
   class->superClass = superClass;
   class->mbrTable = mbrTable;
+  class->vmt = NULL;
   return class;
 }
 

@@ -11,6 +11,7 @@
 #include "utils.h"
 #include "sym.h"
 #include "absyn.h"
+#include "vmt.h"
 #include "scanner.h"
 #include "types.h"
 #include "table.h"

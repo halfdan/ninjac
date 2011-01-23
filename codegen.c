@@ -5,6 +5,7 @@
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
+#include "vmt.h"
 #include "absyn.h"
 #include "types.h"
 #include "table.h"
@@ -40,7 +41,9 @@ static void generateCodeClsList(Absyn *node, Table *table, int returnLabel, int 
 }
 
 static void generateCodeClassDec(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+    Entry *classEntry = lookupClass(&table, (table)->outerScope, node->u.classDec.name);
     fprintf(asmFile, "// Class \"%s\"\n", node->u.classDec.name->string);
+    showVMT(classEntry->u.classEntry.class->vmt,0);
     generateCodeNode(node->u.classDec.members, table, returnLabel, breakLabel);
 }
 

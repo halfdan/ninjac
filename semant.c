@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "sym.h"
 #include "absyn.h"
+#include "vmt.h"
 #include "types.h"
 #include "table.h"
 #include "absyn.h"
@@ -559,6 +560,62 @@ static void checkNode(
     }
 }
 
+
+static void traverseBintree(Bintree *bintree, Class *class, char *fileName, VMT *vmt) {
+    Entry *entry;
+    Sym *name;
+    int offset;
+    char *className = class->name->string;
+
+    if (bintree == NULL) {
+        return;
+    }
+
+    traverseBintree(bintree->left, class, fileName, vmt);
+
+    entry = bintree->entry;
+    name = bintree->sym;
+
+    if ( entry->kind == ENTRY_KIND_METHOD ) {
+        if ( ! entry->u.methodEntry.isStatic ) {
+            offset = findVMT(vmt, name);
+            if (offset >= 0) {
+                replaceVMT(vmt, name, className, fileName, offset);
+            } else {
+                appendVMT(vmt, name, className, fileName);
+            }
+        }
+    }
+    
+    traverseBintree(bintree->right, class, fileName, vmt);
+}
+
+
+static void traverseTable(Class *class, char *filename, VMT *vmt) {
+    traverseBintree(class->mbrTable->bintree, class, filename, vmt);
+}
+
+
+/*static void makeVMT(Sym *className, Table *symTab) {*/
+static void makeVMT(Class *class, char *fileName) {
+    VMT *vmt;
+
+    /* nothing to do if vmt already exists */
+    if ( class->vmt != NULL ) {
+        return;
+    }
+
+    /* make VMT of superclass if it does not exist */
+    if ( class->superClass->vmt == NULL ) {
+        makeVMT(class->superClass, fileName);
+    }
+
+    vmt = copyVMT(class->superClass->vmt);
+
+    traverseTable(class, fileName, vmt);
+    class->vmt = vmt;
+}
+
 static void checkClassDec(
         Absyn *node,
         Table **fileTable,
@@ -664,6 +721,13 @@ static void checkClassDec(
                             globalTable, breakAllowed, returnType, pass);
                 }
             }
+            break;
+        case 4:
+            /* here will be dragons */
+            /* here will be the creation of the virtual method table */
+            /* Lookup current class entry */
+            classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
+            makeVMT(classEntry->u.classEntry.class, node->file);
             break;
         default: {
             error("This should never happen! You have found an invalid pass.");
@@ -1094,6 +1158,19 @@ static void checkFile(
             }
             break;
         case 3:
+            /* Does the file contain any classes? */
+            if (!classList->u.clsList.isEmpty) {
+                /* Loop over all classes in the list */
+                for(classDec = classList->u.clsList.head;
+                        classList->u.clsList.isEmpty == FALSE;
+                        classList = classList->u.clsList.tail,
+                        classDec = classList->u.clsList.head) {
+                    /* Check the class declaration */
+                    checkClassDec(classDec, fileTable, localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                }
+            }
+            break;
+        case 4:
             /* Does the file contain any classes? */
             if (!classList->u.clsList.isEmpty) {
                 /* Loop over all classes in the list */
@@ -2381,6 +2458,7 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     globalTable = newTable(NULL);
 
     objectClass = newClass(TRUE, newSym("Object"), NULL, newTable(globalTable));
+    objectClass->vmt = newEmptyVMT();
     objectEntry = newClassEntry(objectClass);
     enter(globalTable, objectClass->name, objectEntry);
 
@@ -2398,7 +2476,7 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
 
     /* Allocate needed Table pointer space */
     fileTables = (Table **)allocate(numInFiles * sizeof(Table *));
-    
+
     /* first pass: collecting classes and other identifiers */
     for(i = 0; i < numInFiles; i++) {
         checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
@@ -2418,9 +2496,15 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     }
 
     /* fourth pass: typechecking */
-            for(i = 0; i < numInFiles; i++) {
-         checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
+    for(i = 0; i < numInFiles; i++) {
+        checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
                 globalTable, FALSE, returnType, 3);
+    }
+
+    /* fifth pass: make virtual method tables */
+    for(i = 0; i < numInFiles; i++) {
+         checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
+                globalTable, FALSE, returnType, 4);
     }
 
     if (showSymbolTables) {
