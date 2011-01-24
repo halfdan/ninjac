@@ -51,9 +51,8 @@ static int newReturnLabel(void) {
 }
 
 static void shouldNotReach(char *nodeName) {
-  error("code generation should not reach '%s' node", nodeName);
+    error("code generation should not reach '%s' node", nodeName);
 }
-
 
 static void generateCodeFile(Absyn *node, Table *table, int returnLabel, int breakLabel) {
     fprintf(asmFile, "// File \"%s\"\n", node->file);
@@ -114,7 +113,7 @@ static void generateCodeMethodDec(Absyn *node, Table *table, int returnLabel, in
     fprintf(asmFile, "\tasf\t%d\n", methodEntry->u.methodEntry.numLocals);
 
     newRetLabel = newReturnLabel();
-    generateCodeNode(node->u.methodDec.stms,methodEntry->u.methodEntry.localTable,newRetLabel,breakLabel);
+    generateCodeNode(node->u.methodDec.stms, methodEntry->u.methodEntry.localTable, newRetLabel, breakLabel);
 
     /* generate function epilog */
     fprintf(asmFile, "_L%d:\n", newRetLabel);
@@ -143,24 +142,44 @@ static void generateCodeStmsList(Absyn *node, Table *table, int returnLabel, int
 }
 
 static void generateCodeAsmStmt(Absyn *node, Table *table, int returnLabel, int breakLabel) {
-    fprintf(asmFile, node->u.asmStm.code);
+    fprintf(asmFile, "%s\n", node->u.asmStm.code);
 }
 
 static void generateCodeParDec(Absyn *node, Table *table,
-                          int returnLabel, int breakLabel) {
-  shouldNotReach("ParDec");
+        int returnLabel, int breakLabel) {
+    shouldNotReach("ParDec");
 }
-
 
 static void generateCodeVarDec(Absyn *node, Table *table,
-                          int returnLabel, int breakLabel) {
-  shouldNotReach("VarDec");
+        int returnLabel, int breakLabel) {
+    shouldNotReach("VarDec");
 }
 
-
 static void generateCodeEmptyStm(Absyn *node, Table *table,
-                            int returnLabel, int breakLabel) {
-  /* nothing to generate here */
+        int returnLabel, int breakLabel) {
+    /* nothing to generate here */
+}
+
+static void generateProlog(Table* table) {
+    Entry* mainClass = lookup(table, newSym("Main"), ENTRY_KIND_CLASS);
+
+    /* execution framework */
+    fprintf(asmFile, "//\n");
+    fprintf(asmFile, "// execution framework\n");
+    fprintf(asmFile, "//\n");
+    fprintf(asmFile, "_start:\n");
+    fprintf(asmFile, "\tcall\tCLASS_Main_main_%lx\n", djb2(mainClass->u.classEntry.class->vmt->fileName));
+    fprintf(asmFile, "\tcall\t_exit\n");
+    /* void exit() */
+    fprintf(asmFile, "\n");
+    fprintf(asmFile, "//\n");
+    fprintf(asmFile, "// void exit()\n");
+    fprintf(asmFile, "//\n");
+    fprintf(asmFile, "_exit:\n");
+    fprintf(asmFile, "\tasf\t0\n");
+    fprintf(asmFile, "\thalt\n");
+    fprintf(asmFile, "\trsf\n");
+    fprintf(asmFile, "\tret\n");
 }
 
 static void generateCodeNode(Absyn *node, Table *table, int returnLabel, int breakLabel) {
@@ -192,13 +211,13 @@ static void generateCodeNode(Absyn *node, Table *table, int returnLabel, int bre
             generateCodeAsmStmt(node, table, returnLabel, breakLabel);
             break;
         case ABSYN_EMPTYSTM:
-            generateCodeEmptyStm(node,table,returnLabel,breakLabel);
+            generateCodeEmptyStm(node, table, returnLabel, breakLabel);
             break;
         case ABSYN_VARDEC:
-            generateCodeVarDec(node,table,returnLabel,breakLabel);
+            generateCodeVarDec(node, table, returnLabel, breakLabel);
             break;
         case ABSYN_PARDEC:
-            generateCodeParDec(node,table,returnLabel,breakLabel);
+            generateCodeParDec(node, table, returnLabel, breakLabel);
             break;
         default:
             /* this should never happen */
@@ -209,6 +228,10 @@ static void generateCodeNode(Absyn *node, Table *table, int returnLabel, int bre
 void generateCode(Absyn *fileTrees[], int numInFiles, Table **fileTables, FILE *outFile) {
     int i;
     asmFile = outFile;
+
+    /* fileTables[0]->outerScope is the global table! */
+    generateProlog(fileTables[0]->outerScope);
+
     for (i = 0; i < numInFiles; i++) {
         generateCodeNode(fileTrees[i], fileTables[i], -1, -1);
     }
