@@ -8,6 +8,7 @@
 #include "types.h"
 #include "instance.h"
 #include "absyn.h"
+#include "table.h"
 
 
 InstanceVar *newInstanceVar(Sym* name, InstanceVar *next,
@@ -112,21 +113,50 @@ void showInstanceVar(InstanceVar* src, int indent) {
     showInstanceVar(src->next, indent);
 }
 
-void traverseTable(Class *class, Sym *className, Sym *fileName,
+static void traverseBintree(Bintree *bintree, Class *class,
+        Sym *fileName, InstanceVar *attList) {
+    Entry *entry;
+    Sym *name;
+    int offset;
+
+    if (bintree == NULL) {
+        return;
+    }
+
+    traverseBintree(bintree->left, class, fileName, attList);
+
+    entry = bintree->entry;
+    name = bintree->sym;
+
+    if ( entry->kind == ENTRY_KIND_VARIABLE ) {
+        if ( ! entry->u.variableEntry.isStatic ) {
+            offset = findInstanceVar(attList, name);
+            if (offset >= 0) {
+                replaceInstanceVar(attList, name, class->name, fileName, offset);
+            } else {
+                appendInstanceVar(attList, name, class->name, fileName);
+            }
+        }
+    }
+
+    traverseBintree(bintree->right, class, fileName, attList);
+}
+
+static void traverseTable(Class *class, Sym *className, Sym *fileName,
         InstanceVar* instancevar) {
-    
+    traverseBintree(class->mbrTable->bintree, class, fileName, instancevar);
 }
 
 void makeInstanceVariableOffsets(Class *class, char *fileName) {
     InstanceVar *tmp;
 
     /* nothing to do if instance variable offsets already calculated */
-    if ( ! class->attibuteList->isEmpty ) {
+    if ( class->attibuteList != NULL ) {
         return;
     }
 
-    /* calculate offsets of superclass if it is not done by now*/
-    if ( class->superClass->vmt == NULL ) {
+    /* calculate offsets of superclass if it is not done by now */
+    if ( class->superClass->attibuteList == NULL ) {
         makeInstanceVariableOffsets(class->superClass, fileName);
     }
 

@@ -641,7 +641,8 @@ static void checkClassDec(
             /* Create new Table for class, fileTable as parent */
             classTable = newTable(*fileTable);
             /* Create new Class record, no superclass, new member table */
-            class = newClass(node->u.classDec.publ, node->u.classDec.name, NULL, newTable(classTable));
+            class = newClass(node->u.classDec.publ, node->u.classDec.name,
+                    node->file, NULL, newTable(classTable));
             /* Create new entry for file/globaltable */
             classEntry = newClassEntry(class);
             /* Add the entry to the fileTable */
@@ -731,8 +732,9 @@ static void checkClassDec(
             /* Lookup current class entry */
             classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             makeVMT(classEntry->u.classEntry.class, node->file);
-            makeInstanceVariableOffsets(classEntry->u.classEntry.class,
-                    node->file);
+            makeInstanceVariableOffsets(classEntry->u.classEntry.class, node->file);
+            printf("instVars of %s\n", classEntry->u.classEntry.class->name->string);
+            showInstanceVar(classEntry->u.classEntry.class->attibuteList, 0);
             break;
         default: {
             error("This should never happen! You have found an invalid pass.");
@@ -2468,20 +2470,21 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* Initialize trivial Classes */
     globalTable = newTable(NULL);
 
-    objectClass = newClass(TRUE, newSym("Object"), NULL, newTable(globalTable));
+    objectClass = newClass(TRUE, newSym("Object"), NULL, NULL, newTable(globalTable));
     objectClass->vmt = newEmptyVMT();
+    objectClass->attibuteList = newEmptyInstanceVar();
     objectEntry = newClassEntry(objectClass);
     enter(globalTable, objectClass->name, objectEntry);
 
-    integerClass = newClass(TRUE, newSym("Integer"), NULL, newTable(globalTable));
+    integerClass = newClass(TRUE, newSym("Integer"), NULL, NULL, newTable(globalTable));
     integerEntry = newClassEntry(integerClass);
     enter(globalTable, integerClass->name, integerEntry);
 
-    booleanClass = newClass(TRUE, newSym("Boolean"), NULL, newTable(globalTable));
+    booleanClass = newClass(TRUE, newSym("Boolean"), NULL, NULL, newTable(globalTable));
     booleanEntry = newClassEntry(booleanClass);
     enter(globalTable, booleanClass->name, booleanEntry);
 
-    characterClass = newClass(TRUE, newSym("Character"), NULL, newTable(globalTable));
+    characterClass = newClass(TRUE, newSym("Character"), NULL, NULL, newTable(globalTable));
     characterEntry = newClassEntry(characterClass);
     enter(globalTable, characterClass->name, characterEntry);
 

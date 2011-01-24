@@ -18,17 +18,18 @@
 /**************************************************************/
 
 
-Class *newClass(boolean isPublic, Sym *name,
+Class *newClass(boolean isPublic, Sym *name, char *fileName,
                 Class *superClass, struct table *mbrTable) {
   Class *class;
 
   class = (Class *) allocate(sizeof(Class));
   class->isPublic = isPublic;
   class->name = name;
+  class->fileName = fileName;
   class->superClass = superClass;
   class->mbrTable = mbrTable;
-  class->vmt = newEmptyVMT();
-  class->attibuteList = newEmptyInstanceVar();
+  class->vmt = NULL;
+  class->attibuteList = NULL;
   return class;
 }
 
@@ -180,6 +181,11 @@ boolean isStaticTypeOf(Type *type1, Type *type2) {
 
 void showType(Type *type) {
   int i;
+
+  if (type == NULL) {
+      printf("<constructor>");
+      return;
+  }
 
   switch (type->kind) {
     case TYPE_KIND_VOID:

@@ -10,6 +10,7 @@
 typedef struct class {
   boolean isPublic;		/* class visibility outside of package */
   Sym *name;			/* name of the class */
+  char *fileName;
   struct class *superClass;	/* its superclass */
   struct table *mbrTable;	/* symbol table for class members */
   struct vmt *vmt;                     /* virtual method table as linked list */
@@ -17,7 +18,7 @@ typedef struct class {
 } Class;
 
 
-Class *newClass(boolean isPublic, Sym *name,
+Class *newClass(boolean isPublic, Sym *name, char *fileName,
                 Class *superClass, struct table *mbrTable);
 boolean isSameOrSubclassOf(Class *class1, Class *class2);
 void showClass(Class *class, int pos);
