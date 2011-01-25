@@ -51,6 +51,7 @@ clean:
 		rm -f *~ *.o $(BIN)
 		rm -f parser.tab.h parser.tab.c lex.yy.c depend.mak
 		rm -f tests/*~ tests/*.asm
+		rm -f test_fm/*.out test_fm/*.tmp
 
 test:
 		./autotest.pl

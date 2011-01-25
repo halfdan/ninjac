@@ -10,12 +10,12 @@
 typedef struct class {
   boolean isPublic;		/* class visibility outside of package */
   Sym *name;			/* name of the class */
-  char *fileName;
   struct class *superClass;	/* its superclass */
   struct class *metaClass;      /* its meta class */
   struct table *mbrTable;	/* symbol table for class members */
   struct vmt *vmt;                     /* virtual method table as linked list */
   struct instancevar *attibuteList;       /* instance variables as linked list */
+  char *fileName;               /* File where the class is defined */
 } Class;
 
 
