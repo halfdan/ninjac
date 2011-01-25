@@ -146,7 +146,47 @@ static void generateCodeStmsList(Absyn *node, Table *table, Entry *currentMethod
 }
 
 static void generateCodeAsmStmt(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
-    /* fprintf(asmFile, "%s\n", node->u.asmStm.code); */
+    generateCodeNode(node->u.asmStm.instrList, table, currentMethod, returnLabel, breakLabel);
+}
+
+
+static void generateCodeAsmInstrList(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
+    Absyn *instrList;
+    Absyn *instrDec;
+
+    instrList = node;
+
+    if (!instrList->u.asmInstrList.isEmpty) {
+        for (instrDec = instrList->u.asmInstrList.head;
+                instrList->u.asmInstrList.isEmpty == FALSE;
+                instrList = instrList->u.asmInstrList.tail,
+                instrDec = instrList->u.asmInstrList.head) {
+
+            generateCodeNode(instrDec, table, currentMethod, returnLabel, breakLabel);
+        }
+    }
+}
+
+static void generateCodeAsmInstr0(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
+    fprintf(asmFile, "\t%s\n", node->u.asmInstr0.instr);
+}
+
+static void generateCodeAsmInstr1(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
+    fprintf(asmFile, "\t%s\t%d\n", node->u.asmInstr1.instr, node->u.asmInstr1.immediate);
+}
+
+static void generateCodeAsmInstr2(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
+    fprintf(asmFile, "\t%s\t%d,%d\n", node->u.asmInstr2.instr, node->u.asmInstr2.numArgs, node->u.asmInstr2.offset);
+}
+
+static void generateCodeAsmInstr3(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
+    if(strcmp(node->u.asmInstr3.instr, ".addr") == 0) {
+        fprintf(asmFile, "\t%s\t%s_%lx\n", node->u.asmInstr3.instr, node->u.asmInstr3.label, djb2(node->file));
+    }
+    else {
+        fprintf(asmFile, "\t%s\t%s\n", node->u.asmInstr3.instr, node->u.asmInstr3.label);
+    }
+    
 }
 
 static void generateCodeEmptyStm(Absyn *node, Table *table, Entry *currentMethod,
@@ -425,6 +465,21 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
             break;
         case ABSYN_ASMSTM: /* 44 */
             generateCodeAsmStmt(node, table, currentMethod, returnLabel, breakLabel);
+            break;
+        case ABSYN_ASMINSTRLIST: /* 45 */
+            generateCodeAsmInstrList(node, table, currentMethod, returnLabel, breakLabel);
+            break;
+        case ABSYN_ASMINSTR0: /* 46 */
+            generateCodeAsmInstr0(node, table, currentMethod, returnLabel, breakLabel);
+            break;
+        case ABSYN_ASMINSTR1: /* 47 */
+            generateCodeAsmInstr1(node, table, currentMethod, returnLabel, breakLabel);
+            break;
+        case ABSYN_ASMINSTR2: /* 48 */
+            generateCodeAsmInstr2(node, table, currentMethod, returnLabel, breakLabel);
+            break;
+        case ABSYN_ASMINSTR3: /* 49 */
+            generateCodeAsmInstr3(node, table, currentMethod, returnLabel, breakLabel);
             break;
         default:
             /* this should never happen */
