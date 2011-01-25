@@ -460,9 +460,17 @@ asm_instr               : IDENT
                           {
                             $$ = newAsmInstr0($1.file, $1.line, $1.val)
                           }
+                        | NEW INTLIT
+                          {
+                            $$ = newAsmInstr1($1.file, $1.line, "new", $2.val);
+                          }
                         | IDENT INTLIT
                           {
                             $$ = newAsmInstr1($1.file, $1.line, $1.val, $2.val);
+                          }
+                        | IDENT MINUS INTLIT
+                          {
+                            $$ = newAsmInstr1($1.file, $1.line, $1.val, -$3.val);
                           }
                         | IDENT INTLIT COMMA INTLIT
                           {
