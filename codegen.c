@@ -414,6 +414,71 @@ static void generateCodeNewArrayExp(Absyn *node, Table *table, Entry *currentMet
     fprintf(asmFile, "\t.addr %s_%lx\n", node->u.newArrayExp.type->string, djb2(classEntry->u.classEntry.class->fileName));
 }
 
+static void generateCodeUnopExp(Absyn *node, Table *table, Entry *currentMethod,
+                           int returnLabel, int breakLabel) {
+    
+    Entry *entry;
+    Class *class;
+    switch (node->u.unopExp.op) {
+        case ABSYN_UNOP_PLUS:
+            generateCodeNode(node->u.unopExp.right, table, currentMethod, returnLabel, breakLabel);
+            break;
+        case ABSYN_UNOP_MINUS:
+            /* First we need to create the target object */
+            entry = lookup(table, newSym("Integer"), ENTRY_KIND_CLASS);
+            class = entry->u.classEntry.class;
+
+            /* Generate new Integer object and duplicate it */
+            fprintf(asmFile, "\tnew\t%d\n", 2);
+            fprintf(asmFile, "\t.addr\t%s_%lx\n", class->name->string, djb2(class->fileName));
+            fprintf(asmFile, "\tdup\n");
+
+            /* Put the constant 0 on the stack */
+            fprintf(asmFile, "\tpushc\t0\n");
+
+            /* After this expression we should have an Integer object on the stack */
+            generateCodeNode(node->u.unopExp.right, table, currentMethod, returnLabel, breakLabel);
+            
+            /* Get the first field containing the Integer */
+            fprintf(asmFile, "\tgetf\t%d\n", 1);
+
+            /* Substract value on stack */
+            fprintf(asmFile, "\tsub\n");
+            
+            /* put the value on the stack into the first field */
+            fprintf(asmFile, "\tputf\t%d\n", 1);            
+            break;
+        case ABSYN_UNOP_LNOT:
+            /* First we need to create the target object */
+            entry = lookup(table, newSym("Boolean"), ENTRY_KIND_CLASS);
+            class = entry->u.classEntry.class;
+
+            /* Generate new Boolean object and duplicate it */
+            fprintf(asmFile, "\tnew\t%d\n", 2);
+            fprintf(asmFile, "\t.addr\t%s_%lx\n", class->name->string, djb2(class->fileName));
+            fprintf(asmFile, "\tdup\n");
+
+            /* Put the constant 0 on the stack */
+            fprintf(asmFile, "\tpushc\t1\n");
+
+            /* After this expression we should have an Integer object on the stack */
+            generateCodeNode(node->u.unopExp.right, table, currentMethod, returnLabel, breakLabel);
+
+            /* Get the first field containing the Integer */
+            fprintf(asmFile, "\tgetf\t%d\n", 1);
+
+            /* Substract value on stack */
+            fprintf(asmFile, "\tsub\n");
+
+            /* put the value on the stack into the first field */
+            fprintf(asmFile, "\tputf\t%d\n", 1);
+            break;
+        default:
+            error("unknown unary operator %d in generateCodeUnopExp",
+                    node->u.unopExp.op);
+    }
+}
+
 
 static void generateCodeIntExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
