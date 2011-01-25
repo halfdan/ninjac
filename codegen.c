@@ -77,9 +77,33 @@ static void generateCodeClsList(Absyn *node, Table *table, Entry *currentMethod,
 }
 
 static void generateCodeClassDec(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
+    Class *class;
+    Class *metaClass;
+
     Entry *classEntry = lookupClass(&table, (table)->outerScope, node->u.classDec.name);
+    class = classEntry->u.classEntry.class;
+    metaClass = class->metaClass;
+
+    fprintf(asmFile, "// Metaclass \"%s\"\n", metaClass->name->string);
+    fprintf(asmFile, "%s_%lx:\n", metaClass->name->string, djb2(node->file));
+    if(strcmp(metaClass->name->string, "$Object") == 0)
+    {
+        fprintf(asmFile, ".addr\t-1\n");
+    }
+    else {
+        fprintf(asmFile, ".addr\t%s_%lx\n", metaClass->superClass->name->string, djb2(metaClass->superClass->fileName));
+    }
+    printVMT(asmFile, metaClass->vmt);
+
     fprintf(asmFile, "// Class \"%s\"\n", node->u.classDec.name->string);
     fprintf(asmFile, "%s_%lx:\n", node->u.classDec.name->string, djb2(node->file));
+    if(strcmp(node->u.classDec.name->string, "Object") == 0)
+    {
+        fprintf(asmFile, ".addr\t-1\n");
+    }
+    else {
+        fprintf(asmFile, ".addr\t%s_%lx\n", classEntry->u.classEntry.class->superClass->name->string, djb2(classEntry->u.classEntry.class->superClass->fileName));
+    }
     printVMT(asmFile, classEntry->u.classEntry.class->vmt);
     generateCodeNode(node->u.classDec.members, classEntry->u.classEntry.class->mbrTable, currentMethod, returnLabel, breakLabel);
 }
