@@ -426,7 +426,7 @@ static void generateCodeIntExp(Absyn *node, Table *table, Entry *currentMethod,
 
     /* Generate new Integer object and duplicate it */
     fprintf(asmFile, "\tnew\t%d\n", 2);
-    fprintf(asmFile, "\t.addr\t%s_%lx", integerClass->name->string, djb2(integerClass->fileName));
+    fprintf(asmFile, "\t.addr\t%s_%lx\n", integerClass->name->string, djb2(integerClass->fileName));
     fprintf(asmFile, "\tdup\n");
 
     /* Push the value of the intExp */
