@@ -21,6 +21,7 @@ typedef struct sym {
 Sym *newSym(char *string);
 char *symToString(Sym *sym);
 unsigned symToStamp(Sym *sym);
+Sym *metaClassName(Sym *className);
 
 
 #endif /* _SYM_H_ */

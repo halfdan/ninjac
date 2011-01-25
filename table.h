@@ -46,6 +46,7 @@ Entry *newMethodEntry(boolean isPublic, boolean isStatic,
                       struct table *localTable, Class *class);
 Entry *newVariableEntry(boolean isLocal, boolean isPublic,
                         boolean isStatic, Type *type);
+Entry *copyEntry(Entry *entry);
 void showEntry(Entry *entry);
 
 

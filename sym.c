@@ -156,3 +156,10 @@ char *symToString(Sym *sym) {
 unsigned symToStamp(Sym *sym) {
   return sym->stamp;
 }
+
+Sym *metaClassName(Sym *className) {
+    char *metaClassName = appendString("$", className->string);
+
+    return newSym(metaClassName);
+}
+

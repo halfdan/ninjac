@@ -48,3 +48,16 @@ unsigned long djb2(char *str) {
 
     return hash;
 }
+
+char *appendString(char *string1, char *string2) {
+    char *newString = allocate(strlen(string1) + strlen(string2) + 2);
+    if ( newString == NULL ) {
+        error("not enough memory");
+    }
+
+    strcpy(newString, "");
+    strcat(newString, string1);
+    strcat(newString, string2);
+
+    return newString;
+}

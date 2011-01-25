@@ -42,17 +42,18 @@ sub Autotest_Main() {
         my $tmpout = "$ref_dir/$basename.tmp";
         my $output = "$ref_dir/$basename.out";
         open my $oldout, ">&STDOUT" or die "Can't duplicate STDOUT: $!";
-#        close STDOUT;
+	open my $olderr, ">&STDERR" or die "Can't duplicate STDERR: $!";
         
         # redirect STDOUT
         open(TMPOUT, ">", "$tmpout") or die("Konnte '$tmpout' nicht öffnen: $!");
-        STDOUT->fdopen(\*TMPOUT, 'w') or die("$!");
+	#STDOUT->fdopen(\*TMPOUT, 'w') or die("$!");
+	STDERR->fdopen(\*TMPOUT, 'w') or die("$!");
 
         # compile testfile
         system("./njc $testfile");
 
         # restore STDOUT
-        STDOUT->fdopen(\*$oldout, 'w') or die("$!");
+        STDERR->fdopen(\*$oldout, 'w') or die("$!");
         close TMPOUT;
 
         # filter tmp-Output

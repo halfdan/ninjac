@@ -69,6 +69,13 @@ static void indent(int n) {
 }
 
 
+Entry *copyEntry(Entry *entry) {
+    Entry *tmpEntry = allocate(sizeof(Entry));
+    *tmpEntry = *entry;
+    return tmpEntry;
+}
+
+
 void showEntry(Entry *entry) {
   switch (entry->kind) {
     case ENTRY_KIND_CLASS:
@@ -236,6 +243,31 @@ Entry *lookupMember(Class *class, Sym *sym, int kind) {
         }
         tmpClass = tmpClass->superClass;
     }
+
+    /* lookup static member in meta class */
+    tmpClass = class->metaClass;
+
+    while(tmpClass != NULL) {
+        table = tmpClass->mbrTable;
+        entry = lookupBintree(table->bintree, key, kind);
+        if(entry != NULL) {
+            entry = copyEntry(entry);
+            switch(entry->kind) {
+                case ENTRY_KIND_VARIABLE:
+                    entry->u.variableEntry.isStatic = TRUE;
+                    break;
+                case ENTRY_KIND_METHOD:
+                    entry->u.methodEntry.isStatic = TRUE;
+                    break;
+                default:
+                    error("you got it wrong in lookupMember!");
+                    break;
+            }
+            return entry;
+        }
+        tmpClass = tmpClass->superClass;
+    }
+
     return NULL;
 }
 

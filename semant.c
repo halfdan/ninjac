@@ -631,24 +631,39 @@ static void checkClassDec(
 
     Absyn *memberList;
     Absyn *memberDec;
-    Entry* classEntry;
-    Entry* superClassEntry;
-    char * superClassName;
-    Class* class;
+    Entry *classEntry;
+    Entry *superClassEntry;
+    Entry *metaClassEntry;
+    Entry *metaSuperClassEntry;
+    char *superClassName;
+    Class *class;
+    Class *metaClass;
 
     switch(pass) {
         case 0:
             /* Create new Table for class, fileTable as parent */
             classTable = newTable(*fileTable);
+            /* Create new Class record for the meta class, too */
+            metaClass = newClass(node->u.classDec.publ, metaClassName(node->u.classDec.name),
+                    node->file, NULL, NULL, newTable( newTable(*fileTable)));
             /* Create new Class record, no superclass, new member table */
             class = newClass(node->u.classDec.publ, node->u.classDec.name,
-                    node->file, NULL, newTable(classTable));
+                    node->file, NULL, metaClass, newTable(classTable));
             /* Create new entry for file/globaltable */
-            classEntry = newClassEntry(class);
+            metaClassEntry = newClassEntry(metaClass);
             /* Add the entry to the fileTable */
+            classEntry = newClassEntry(class);
+            /* Create new entry for the meta class */
             if ( NULL == enter(*fileTable, node->u.classDec.name, classEntry) ) {
                 error("local redeclaration of class '%s' in '%s' on line %d",
                         symToString(node->u.classDec.name),
+                        node->file,
+                        node->line);
+            }
+            /* Add the meta class entry to the fileTable */
+            if ( NULL == enter(*fileTable, metaClassEntry->u.classEntry.class->name, metaClassEntry) ) {
+                error("local redeclaration of meta class '%s' in '%s' on line %d",
+                        metaClassEntry->u.classEntry.class->name,
                         node->file,
                         node->line);
             }
@@ -660,18 +675,37 @@ static void checkClassDec(
                         node->file,
                         node->line);
                 }
+                /* and so goes the meta class */
+                if ( NULL == enter(globalTable, metaClassEntry->u.classEntry.class->name, metaClassEntry) ) {
+                    error("global redeclaration of class '%s' in '%s' on line %d",
+                        metaClassEntry->u.classEntry.class->name->string,
+                        node->file,
+                        node->line);
+                }
             }
             break;
         case 1:
             /* Lookup current class entry, should never be NULL */
             classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
+            /* Lookup meta class entry, should never be NULL */
+            metaClassEntry = lookupClass(fileTable, globalTable, metaClassName(node->u.classDec.name));
             /* Lookup entry of the supposed superclass */
             superClassEntry = lookupClass(fileTable, globalTable, node->u.classDec.superClass);
+            /* Lookup entry of the supposed superclass of meta class */
+            metaSuperClassEntry = lookupClass(fileTable, globalTable, metaClassName(node->u.classDec.superClass));
 
             /* Did we find the superclass? */
             if(superClassEntry == NULL) {
                 error("unknown superclass '%s' in '%s' on line %d",
                         node->u.classDec.superClass->string,
+                        node->file,
+                        node->line);
+            }
+
+            /* Did we find the meta superclass? */
+            if(metaSuperClassEntry == NULL) {
+                error("unknown superclass of metaclass '%s' in '%s' on line %d",
+                        metaClassName(node->u.classDec.superClass)->string,
                         node->file,
                         node->line);
             }
@@ -687,6 +721,8 @@ static void checkClassDec(
 
             /* Set the superclass */
             classEntry->u.classEntry.class->superClass = superClassEntry->u.classEntry.class;
+            /* Set the superclass of meta class */
+            metaClassEntry->u.classEntry.class->superClass = metaSuperClassEntry->u.classEntry.class;
 
             break;
         case 2:
@@ -733,8 +769,12 @@ static void checkClassDec(
             classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             makeVMT(classEntry->u.classEntry.class, node->file);
             makeInstanceVariableOffsets(classEntry->u.classEntry.class, node->file);
-            printf("instVars of %s\n", classEntry->u.classEntry.class->name->string);
-            showInstanceVar(classEntry->u.classEntry.class->attibuteList, 0);
+            makeVMT(classEntry->u.classEntry.class->metaClass, node->file);
+            makeInstanceVariableOffsets(classEntry->u.classEntry.class->metaClass, node->file);
+/*            printf("instVars of %s\n", classEntry->u.classEntry.class->name->string);
+            showInstanceVar(classEntry->u.classEntry.class->attibuteList, 0);*/
+            printf("instVars of %s\n", classEntry->u.classEntry.class->metaClass->name->string);
+            showInstanceVar(classEntry->u.classEntry.class->metaClass->attibuteList, 0);
             break;
         default: {
             error("This should never happen! You have found an invalid pass.");
@@ -781,12 +821,25 @@ static void checkFieldDec(
 
 
             /* Add the entry to the member Table */
-            if(NULL == enter(classTable, node->u.fieldDec.name, fieldEntry)) {
-                error("redeclaration of field '%s' (defined in class '%s') in file '%s' on line %d",
-                        node->u.fieldDec.name->string,
-                        actClass->name->string,
-                        node->file,
-                        node->line);
+            /* if the member is static
+             * then add it to the member table of the meta class */
+            if( node->u.fieldDec.stat ) {
+                fieldEntry->u.variableEntry.isStatic = FALSE;
+                if(NULL == enter(actClass->metaClass->mbrTable, node->u.fieldDec.name, fieldEntry)) {
+                    error("redeclaration of field '%s' (defined in class '%s') in file '%s' on line %d",
+                            node->u.fieldDec.name->string,
+                            actClass->name->string,
+                            node->file,
+                            node->line);
+                }
+            } else {
+                if(NULL == enter(classTable, node->u.fieldDec.name, fieldEntry)) {
+                    error("redeclaration of field '%s' (defined in class '%s') in file '%s' on line %d",
+                            node->u.fieldDec.name->string,
+                            actClass->name->string,
+                            node->file,
+                            node->line);
+                }
             }
 
             break;
@@ -809,6 +862,7 @@ static void checkMethodDec(
         Type *returnType,
         int pass) {
 
+    Class *metaClass = actClass->metaClass;
     Entry* methodEntry;
     Entry* superClassMethodEntry;
     Entry* tmpEntry;
@@ -897,18 +951,31 @@ static void checkMethodDec(
                     localTable /* Local table*/,
                     actClass);
 
-            /* Add the entry to the classTable */
-            if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
-                /* We don't allow method overloading at this point in Ninja */
-                error("Method already exists in class '%s' in file '%s' on line '%d'.",
-                        actClass->name->string,
-                        node->file,
-                        node->line);
+            /* Add the entry to the classTable if non-static
+             * otherwise add the entry to the classTable of the meta class */
+            if (node->u.methodDec.stat) {
+                methodEntry->u.methodEntry.isStatic = FALSE;
+                if(NULL == enter(metaClass->mbrTable, node->u.methodDec.name, methodEntry)) {
+                    /* We don't allow method overloading at this point in Ninja */
+                    error("Method already exists in class '%s' in file '%s' on line '%d'.",
+                            actClass->name->string,
+                            node->file,
+                            node->line);
+                }
+            } else {
+                if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
+                    /* We don't allow method overloading at this point in Ninja */
+                    error("Method already exists in class '%s' in file '%s' on line '%d'.",
+                            actClass->name->string,
+                            node->file,
+                            node->line);
+                }
             }
             break;
         case 3:
             /* Fetch method entry from class table */
-            methodEntry = lookup(classTable, node->u.methodDec.name, ENTRY_KIND_METHOD);
+            /*methodEntry = lookup(classTable, node->u.methodDec.name, ENTRY_KIND_METHOD);*/
+            methodEntry = lookupMember(actClass, node->u.methodDec.name, ENTRY_KIND_METHOD);
 
             /* save a pointer of actual method */
             actMethod = methodEntry;
@@ -1461,25 +1528,6 @@ static void checkArrayVar(
                     node->line);
         }
     }
-
-/*
-     switch(varType->kind) {
-        case TYPE_KIND_SIMPLE:
-            tmpType = newArrayType(varType->u.simpleType.class, 1);
-            break;
-        case TYPE_KIND_ARRAY:
-            tmpType = newArrayType(varType->u.arrayType.base, varType->u.arrayType.dims + 1);
-            break;
-        case TYPE_KIND_NIL:
-        case TYPE_KIND_VOID:
-        default:
-            error("exspected simple or array type");
-            break;
-    }
-
-    *returnType = *tmpType;
-    free(tmpType);
- * */
 
     free(integerType);
     free(indexType);
@@ -2453,14 +2501,23 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     Table *classTable;
     Table **fileTables;
     Class *objectClass;
+    Class *objectMetaClass;
     Class *integerClass;
+    Class *integerMetaClass;
     Class *booleanClass;
+    Class *booleanMetaClass;
     Class *characterClass;
+    Class *characterMetaClass;
     Entry *objectEntry;
+    Entry *objectMetaEntry;
     Entry *integerEntry;
+    Entry *integerMetaEntry;
     Entry *booleanEntry;
+    Entry *booleanMetaEntry;
     Entry *characterEntry;
+    Entry *characterMetaEntry;
     Entry *mainClassEntry;
+    Entry *mainClassMetaEntry;
     Entry *mainMethodEntry;
 
     Type *returnType = allocate(sizeof(Type));
@@ -2470,22 +2527,48 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* Initialize trivial Classes */
     globalTable = newTable(NULL);
 
-    objectClass = newClass(TRUE, newSym("Object"), NULL, NULL, newTable(globalTable));
+    objectMetaClass = newClass(TRUE, newSym("$Object"), NULL, NULL, NULL, newTable(globalTable));
+    objectClass = newClass(TRUE, newSym("Object"), NULL, NULL, objectMetaClass, newTable(globalTable));
+    objectMetaClass->vmt = newEmptyVMT();
     objectClass->vmt = newEmptyVMT();
+    objectMetaClass->attibuteList = newEmptyInstanceVar();
     objectClass->attibuteList = newEmptyInstanceVar();
+    objectMetaEntry = newClassEntry(objectMetaClass);
     objectEntry = newClassEntry(objectClass);
+    enter(globalTable, objectMetaClass->name, objectMetaEntry);
     enter(globalTable, objectClass->name, objectEntry);
 
-    integerClass = newClass(TRUE, newSym("Integer"), NULL, NULL, newTable(globalTable));
+    integerMetaClass = newClass(TRUE, newSym("$Integer"), NULL, NULL, NULL, newTable(globalTable));
+    integerClass = newClass(TRUE, newSym("Integer"), NULL, NULL, integerMetaClass, newTable(globalTable));
+    integerMetaClass->vmt = newEmptyVMT();
+    integerClass->vmt = newEmptyVMT();
+    integerMetaClass->attibuteList = newEmptyInstanceVar();
+    integerClass->attibuteList = newEmptyInstanceVar();
     integerEntry = newClassEntry(integerClass);
+    integerMetaEntry = newClassEntry(integerMetaClass);
+    enter(globalTable, integerMetaClass->name, integerMetaEntry);
     enter(globalTable, integerClass->name, integerEntry);
 
-    booleanClass = newClass(TRUE, newSym("Boolean"), NULL, NULL, newTable(globalTable));
+    booleanMetaClass = newClass(TRUE, newSym("$Boolean"), NULL, NULL, NULL, newTable(globalTable));
+    booleanClass = newClass(TRUE, newSym("Boolean"), NULL, NULL, booleanMetaClass, newTable(globalTable));
+    booleanMetaClass->vmt = newEmptyVMT();
+    booleanClass->vmt = newEmptyVMT();
+    booleanMetaClass->attibuteList = newEmptyInstanceVar();
+    booleanClass->attibuteList = newEmptyInstanceVar();
+    booleanMetaEntry = newClassEntry(booleanMetaClass);
     booleanEntry = newClassEntry(booleanClass);
+    enter(globalTable, booleanMetaClass->name, booleanMetaEntry);
     enter(globalTable, booleanClass->name, booleanEntry);
 
-    characterClass = newClass(TRUE, newSym("Character"), NULL, NULL, newTable(globalTable));
+    characterMetaClass = newClass(TRUE, newSym("$Character"), NULL, NULL, NULL, newTable(globalTable));
+    characterClass = newClass(TRUE, newSym("Character"), NULL, NULL, characterMetaClass, newTable(globalTable));
+    characterMetaClass->vmt = newEmptyVMT();
+    characterClass->vmt = newEmptyVMT();
+    characterMetaClass->attibuteList = newEmptyInstanceVar();
+    characterClass->attibuteList = newEmptyInstanceVar();
+    characterMetaEntry = newClassEntry(characterMetaClass);
     characterEntry = newClassEntry(characterClass);
+    enter(globalTable, characterMetaClass->name, characterMetaEntry);
     enter(globalTable, characterClass->name, characterEntry);
 
     /* Allocate needed Table pointer space */
@@ -2540,7 +2623,7 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     if ( NULL == mainClassEntry ) {
         error("public class '%s' is missing.", mainClass);
     } else {
-        mainMethodEntry = lookup(mainClassEntry->u.classEntry.class->mbrTable,
+        mainMethodEntry = lookupMember(mainClassEntry->u.classEntry.class,
                 newSym("main"), ENTRY_KIND_METHOD);
         if ( NULL == mainMethodEntry ) {
             error("public class '%s' does not contain a method 'main'.", mainClass);

@@ -12,6 +12,7 @@ typedef struct class {
   Sym *name;			/* name of the class */
   char *fileName;
   struct class *superClass;	/* its superclass */
+  struct class *metaClass;      /* its meta class */
   struct table *mbrTable;	/* symbol table for class members */
   struct vmt *vmt;                     /* virtual method table as linked list */
   struct instancevar *attibuteList;       /* instance variables as linked list */
@@ -19,9 +20,11 @@ typedef struct class {
 
 
 Class *newClass(boolean isPublic, Sym *name, char *fileName,
-                Class *superClass, struct table *mbrTable);
+                Class *superClass, Class *metaClass, struct table *mbrTable);
+
 boolean isSameOrSubclassOf(Class *class1, Class *class2);
 void showClass(Class *class, int pos);
+void makeMetaClass(Class * class);
 
 
 #define TYPE_KIND_VOID		0

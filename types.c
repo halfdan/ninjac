@@ -19,7 +19,7 @@
 
 
 Class *newClass(boolean isPublic, Sym *name, char *fileName,
-                Class *superClass, struct table *mbrTable) {
+                Class *superClass, Class *metaClass, struct table *mbrTable) {
   Class *class;
 
   class = (Class *) allocate(sizeof(Class));
@@ -27,6 +27,7 @@ Class *newClass(boolean isPublic, Sym *name, char *fileName,
   class->name = name;
   class->fileName = fileName;
   class->superClass = superClass;
+  class->metaClass = metaClass;
   class->mbrTable = mbrTable;
   class->vmt = NULL;
   class->attibuteList = NULL;
