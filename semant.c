@@ -43,6 +43,8 @@ Entry *actMethod;
 int localOffset;
 /* same with paramOffset */
 int paramOffset;
+/* global index for meta classes */
+int globalIndex = 0;
 
 static void checkNode(
         Absyn *node,
@@ -654,6 +656,7 @@ static void checkClassDec(
             /* Create new Class record for the meta class, too */
             metaClass = newClass(node->u.classDec.publ, metaClassName(node->u.classDec.name),
                     node->file, NULL, NULL, newTable( newTable(*fileTable)));
+            metaClass->globalIndex = globalIndex++;
             /* Create new Class record, no superclass, new member table */
             class = newClass(node->u.classDec.publ, node->u.classDec.name,
                     node->file, NULL, metaClass, newTable(classTable));
@@ -910,6 +913,8 @@ static void checkMethodDec(
     Absyn *paramList;
     Absyn *paramDec;
     int i;
+    int numLocals = 0;
+    int numParams = 0;
     
     switch(pass) {
         case 0:
@@ -947,8 +952,9 @@ static void checkMethodDec(
                 /* set the offset for the params to -2 */
                 paramOffset = -2;
                 /* Loop over all params in the list */
-                for(paramDec = paramList->u.parList.head;
+                for(numParams = 1, paramDec = paramList->u.parList.head;
                         paramList->u.parList.isEmpty == FALSE;
+                        numParams++,
                         paramList = paramList->u.clsList.tail,
                         paramDec = paramList->u.clsList.head) {
 
@@ -969,8 +975,9 @@ static void checkMethodDec(
             localOffset = 0;
             if (!localList->u.varList.isEmpty) {
                 /* Loop over all local variables in the list */
-                for(localDec = localList->u.varList.head;
+                for(i = 0, numLocals = 1, localDec = localList->u.varList.head;
                         localList->u.varList.isEmpty == FALSE;
+                        i++, numLocals++,
                         localList = localList->u.varList.tail,
                         localDec = localList->u.varList.head) {
                     /* Check the variable declaration */
@@ -986,6 +993,8 @@ static void checkMethodDec(
                     paramTypes /* Param types*/,
                     localTable /* Local table*/,
                     actClass);
+            methodEntry->u.methodEntry.numParams = numParams;
+            methodEntry->u.methodEntry.numLocals = numLocals;
 
             /* Add the entry to the classTable if non-static
              * otherwise add the entry to the classTable of the meta class */
@@ -1087,6 +1096,8 @@ static void checkMethodDec(
                                         node->line);
                             }
                         }
+                        methodEntry->u.methodEntry.numParams = i;
+
                     }
                 }
             }
@@ -2565,12 +2576,8 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* initialize tables and foobars */
     Table *globalTable;
     Table **fileTables;
-    Class *booleanClass;
-    Class *booleanMetaClass;
     Class *characterClass;
     Class *characterMetaClass;
-    Entry *booleanEntry;
-    Entry *booleanMetaEntry;
     Entry *characterEntry;
     Entry *characterMetaEntry;
     Entry *mainClassEntry;
@@ -2583,6 +2590,7 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* Initialize trivial Classes */
     globalTable = newTable(NULL);
 
+/*
     booleanMetaClass = newClass(TRUE, newSym("$Boolean"), NULL, NULL, NULL, newTable(globalTable));
     booleanClass = newClass(TRUE, newSym("Boolean"), NULL, NULL, booleanMetaClass, newTable(globalTable));
     booleanMetaClass->vmt = newEmptyVMT();
@@ -2593,7 +2601,7 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     booleanEntry = newClassEntry(booleanClass);
     enter(globalTable, booleanMetaClass->name, booleanMetaEntry);
     enter(globalTable, booleanClass->name, booleanEntry);
-
+*/
     characterMetaClass = newClass(TRUE, newSym("$Character"), NULL, NULL, NULL, newTable(globalTable));
     characterClass = newClass(TRUE, newSym("Character"), NULL, NULL, characterMetaClass, newTable(globalTable));
     characterMetaClass->vmt = newEmptyVMT();

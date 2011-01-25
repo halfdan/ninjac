@@ -18,6 +18,7 @@ typedef struct class {
   char *fileName;               /* File where the class is defined */
   int numFields;                /* number of instance variables */
   int numMethods;               /* number of object methods */
+  int globalIndex;              /* index for meta classes */
 } Class;
 
 

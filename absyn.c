@@ -902,7 +902,11 @@ static void showClassDec(Absyn *node, int n) {
   say(symToString(node->u.classDec.name));
   say(",\n");
   indent(n + 1);
-  say(symToString(node->u.classDec.superClass));
+  if (node->u.classDec.superClass == NULL) {
+      say("nil");
+  } else {
+      say(symToString(node->u.classDec.superClass));
+  }
   say(",\n");
   showNode(node->u.classDec.members, n + 1);
   say(")");

@@ -42,6 +42,9 @@ Entry *newMethodEntry(boolean isPublic, boolean isStatic,
   entry->u.methodEntry.paramTypes = paramTypes;
   entry->u.methodEntry.localTable = localTable;
   entry->u.methodEntry.class = class;
+  entry->u.methodEntry.numLocals = 0;
+  entry->u.methodEntry.numParams = 0;
+
   return entry;
 }
 
@@ -99,6 +102,12 @@ void showEntry(Entry *entry) {
       indent(10);
       printf("paramTypes = ");
       showTypeList(entry->u.methodEntry.paramTypes);
+      printf("\n");
+      indent(10);
+      printf("numLocals = %d",entry->u.methodEntry.numLocals);
+      printf("\n");
+      indent(10);
+      printf("numParams = %d", entry->u.methodEntry.numParams);
       printf("\n");
       break;
     case ENTRY_KIND_VARIABLE:

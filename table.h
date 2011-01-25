@@ -25,6 +25,7 @@ typedef struct {
       TypeList *paramTypes;	/* parameter types */
       struct table *localTable;	/* symbol table for local variables */
       int numLocals;            /* Number of local variables */
+      int numParams;            /* Number of local variables */
       Class *class;             /* class where method is defined in */
     } methodEntry;
     struct {

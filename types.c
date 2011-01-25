@@ -33,6 +33,7 @@ Class *newClass(boolean isPublic, Sym *name, char *fileName,
   class->attibuteList = NULL;
   class->numFields = 0;
   class->numMethods = 0;
+  class->globalIndex = -1;
   return class;
 }
 
