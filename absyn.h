@@ -52,6 +52,12 @@
 #define ABSYN_STMLIST		42
 #define ABSYN_EXPLIST		43
 #define ABSYN_ASMSTM            44
+#define ABSYN_ASMINSTRLIST      45
+#define ABSYN_ASMINSTR0         46
+#define ABSYN_ASMINSTR1         47
+#define ABSYN_ASMINSTR2         48
+#define ABSYN_ASMINSTR3         49
+
 
 #define ABSYN_BINOP_LOR		0
 #define ABSYN_BINOP_LAND	1
@@ -160,8 +166,29 @@ typedef struct absyn {
       int dummy;		/* empty struct not allowed in C */
     } retStm;
     struct {                    /* asm-Stm */
-      char* code;
+      struct absyn* instrList;
     } asmStm;
+    struct {
+      boolean isEmpty;		/* true: last element, head/tail unused */
+      struct absyn *head;	/* instruction */
+      struct absyn *tail;	/* asm instruction list */
+    } asmInstrList;
+    struct {                    /* e.g. halt, eq, ne, ..*/
+      char *instr;
+    } asmInstr0;
+    struct {                    /* e.g. drop, getf, putf, .. */
+      char *instr;
+      int immediate;
+    } asmInstr1;
+    struct {                    /* vmcall <numArgs>,<offset>*/
+      char *instr;
+      int numArgs;
+      int offset;
+    } asmInstr2;
+    struct {                    /* e.g. .addr <label>, call <target>, .. */
+      char *instr;
+      char *label;
+    } asmInstr3;
     struct {
       struct absyn *exp;	/* return expression */
     } retExpStm;
@@ -331,7 +358,7 @@ Absyn *newVarExp(char *file, int line,
                  Absyn *var);
 Absyn *newCallExp(char *file, int line,
                   Sym *name, Absyn *rcvr, Absyn *args);
-Absyn *newAsmStm(char *file, int line, char *code);
+Absyn *newAsmStm(char *file, int line, Absyn *instrList);
 Absyn *newNewExp(char *file, int line,
                  Sym *type, Absyn *args);
 Absyn *newNewArrayExp(char *file, int line,
@@ -354,6 +381,12 @@ Absyn *emptyStmList(void);
 Absyn *newStmList(Absyn *head, Absyn *tail);
 Absyn *emptyExpList(void);
 Absyn *newExpList(Absyn *head, Absyn *tail);
+Absyn *emptyAsmInstrList(void);
+Absyn *newAsmInstrList(Absyn *head, Absyn *tail);
+Absyn *newAsmInstr0(char *file, int line, char* instr);
+Absyn *newAsmInstr1(char *file, int line, char* instr, int immediate);
+Absyn *newAsmInstr2(char *file, int line, char* instr, int numArgs, int offset);
+Absyn *newAsmInstr3(char *file, int line, char* instr, char* label);
 
 void showAbsyn(Absyn *node);
 

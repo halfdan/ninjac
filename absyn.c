@@ -296,13 +296,13 @@ Absyn *newCallStm(char *file, int line,
   return node;
 }
 
-Absyn *newAsmStm(char *file, int line, char *code) {
+Absyn *newAsmStm(char *file, int line, Absyn *instrList) {
     Absyn *node;
     node = (Absyn *)allocate(sizeof(Absyn));
     node->type = ABSYN_ASMSTM;
     node->file = file;
     node->line = line;
-    node->u.asmStm.code = code;
+    node->u.asmStm.instrList = instrList;
     return node;
 }
 
@@ -701,6 +701,78 @@ Absyn *newExpList(Absyn *head, Absyn *tail) {
   return node;
 }
 
+Absyn *emptyAsmInstrList(void) {
+  Absyn *node;
+
+  node = (Absyn *) allocate(sizeof(Absyn));
+  node->type = ABSYN_ASMINSTRLIST;
+  node->file = NULL;
+  node->line = 1;
+  node->u.asmInstrList.isEmpty = TRUE;
+  return node;
+}
+
+Absyn *newAsmInstrList(Absyn *head, Absyn *tail) {
+  Absyn *node;
+
+  node = (Absyn *) allocate(sizeof(Absyn));
+  node->type = ABSYN_ASMINSTRLIST;
+  node->file = NULL;
+  node->line = -1;
+  node->u.asmInstrList.isEmpty = FALSE;
+  node->u.asmInstrList.head = head;
+  node->u.asmInstrList.tail = tail;
+  return node;
+}
+
+Absyn *newAsmInstr0(char *file, int line, char* instr) {
+  Absyn *node;
+
+  node = (Absyn *) allocate(sizeof(Absyn));
+  node->type = ABSYN_ASMINSTR0;
+  node->file = file;
+  node->line = line;
+  node->u.asmInstr0.instr = instr;
+  return node;
+}
+
+Absyn *newAsmInstr1(char *file, int line, char* instr, int immediate) {
+  Absyn *node;
+
+  node = (Absyn *) allocate(sizeof(Absyn));
+  node->type = ABSYN_ASMINSTR1;
+  node->file = file;
+  node->line = line;
+  node->u.asmInstr1.instr = instr;
+  node->u.asmInstr1.immediate = immediate;
+  return node;
+}
+
+Absyn *newAsmInstr2(char *file, int line, char* instr, int numArgs, int offset) {
+  Absyn *node;
+
+  node = (Absyn *) allocate(sizeof(Absyn));
+  node->type = ABSYN_ASMINSTR2;
+  node->file = file;
+  node->line = line;
+  node->u.asmInstr2.instr = instr;
+  node->u.asmInstr2.numArgs = numArgs;
+  node->u.asmInstr2.offset = offset;
+  return node;
+}
+
+Absyn *newAsmInstr3(char *file, int line, char* instr, char* label) {
+  Absyn *node;
+
+  node = (Absyn *) allocate(sizeof(Absyn));
+  node->type = ABSYN_ASMINSTR3;
+  node->file = file;
+  node->line = line;
+  node->u.asmInstr3.instr = instr;
+  node->u.asmInstr3.label = label;
+  return node;
+}
+
 
 /**************************************************************/
 
@@ -1019,8 +1091,7 @@ static void showCallStm(Absyn *node, int n) {
 static void showAsmStm(Absyn *node, int n) {
   indent(n);
   say("AsmStm(\n");
-  indent(n + 1);
-  sayString(node->u.asmStm.code);
+  showNode(node->u.asmStm.instrList, n + 1);
   say(")");
 }
 
@@ -1335,6 +1406,39 @@ static void showExpList(Absyn *node, int n) {
   say(")");
 }
 
+static void showAsmInstrList(Absyn *node, int n) {
+    indent(n);
+    say("AsmInstrList(");
+    while(!node->u.asmInstrList.isEmpty) {
+        say("\n");
+        showNode(node->u.asmInstrList.head, n + 1);
+        node = node->u.asmInstrList.tail;
+        if(!node->u.asmInstrList.isEmpty) {
+            say(",");
+        }
+    }
+    say(")");
+}
+
+static void showAsmInstr0(Absyn *node, int n) {
+    indent(n);
+    say(node->u.asmInstr0.instr);
+}
+
+static void showAsmInstr1(Absyn *node, int n) {
+    indent(n);
+    printf("%s\t%d", node->u.asmInstr1.instr, node->u.asmInstr1.immediate);
+}
+
+static void showAsmInstr2(Absyn *node, int n) {
+    indent(n);
+    printf("%s\t%d,%d", node->u.asmInstr2.instr, node->u.asmInstr2.numArgs, node->u.asmInstr2.offset);
+}
+
+static void showAsmInstr3(Absyn *node, int n) {
+    indent(n);
+    printf("%s\t%s", node->u.asmInstr3.instr, node->u.asmInstr3.label);
+}
 
 static void showNode(Absyn *node, int indent) {
   if (node == NULL) {
@@ -1475,6 +1579,21 @@ static void showNode(Absyn *node, int indent) {
       break;
     case ABSYN_EXPLIST:
       showExpList(node, indent);
+      break;
+    case ABSYN_ASMINSTRLIST:
+      showAsmInstrList(node, indent);
+      break;
+    case ABSYN_ASMINSTR0:
+      showAsmInstr0(node, indent);
+      break;
+    case ABSYN_ASMINSTR1:
+      showAsmInstr1(node, indent);
+      break;
+    case ABSYN_ASMINSTR2:
+      showAsmInstr2(node, indent);
+      break;
+    case ABSYN_ASMINSTR3:
+      showAsmInstr3(node, indent);
       break;
     default:
       /* this should never happen */

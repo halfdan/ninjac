@@ -146,7 +146,7 @@ static void generateCodeStmsList(Absyn *node, Table *table, Entry *currentMethod
 }
 
 static void generateCodeAsmStmt(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
-    fprintf(asmFile, "%s\n", node->u.asmStm.code);
+    /* fprintf(asmFile, "%s\n", node->u.asmStm.code); */
 }
 
 static void generateCodeEmptyStm(Absyn *node, Table *table, Entry *currentMethod,

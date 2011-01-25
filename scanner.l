@@ -42,7 +42,6 @@ DECNUM			{D}+
 HEXNUM			0x{H}+
 CHR			\'([^\'\\\n]|\\.)\'
 STR			\"([^\"\\\n]|\\.)*\"
-ASMCODE                 %([^\"\\%]|\\.\n)*%
 
 
 %%
@@ -173,6 +172,36 @@ asm                     {
                           yylval.noVal.file = fileName;
 			  yylval.noVal.line = lineNumber;
 			  return ASM;
+                        }
+
+\.addr                  {
+                          yylval.noVal.file = fileName;
+			  yylval.noVal.line = lineNumber;
+			  return DOT_ADDR;
+                        }
+
+call                    {
+                          yylval.noVal.file = fileName;
+			  yylval.noVal.line = lineNumber;
+			  return CALL;
+                        }
+
+jmp                     {
+                          yylval.noVal.file = fileName;
+			  yylval.noVal.line = lineNumber;
+			  return JMP;
+                        }
+
+brt                     {
+                          yylval.noVal.file = fileName;
+			  yylval.noVal.line = lineNumber;
+			  return BRT;
+                        }
+
+brf                     {
+                          yylval.noVal.file = fileName;
+			  yylval.noVal.line = lineNumber;
+			  return BRF;
                         }
 
 \(			{
@@ -437,61 +466,6 @@ true			{
 			  return STRINGLIT;
 			}
 
-{ASMCODE}       	{
-			  len = strlen(yytext);
-			  yytext[len - 1] = '\0';
-			  len--;
-			  p = yytext;
-			  q = p + 1;
-			  while (1) {
-			    *p = *q;
-			    if (*p == '\0') {
-			      break;
-			    }
-			    p++;
-			    q++;
-			  }
-			  len--;
-			  r = yytext;
-			  while (*r != '\0') {
-			    if (*r == '\\') {
-			      p = r;
-			      q = p + 1;
-			      switch (*q) {
-			        case 'n':
-			          *p = '\n';
-			          break;
-			        case 'r':
-			          *p = '\r';
-			          break;
-			        case 't':
-			          *p = '\t';
-			          break;
-			        default:
-			          *p = *q;
-			          break;
-			      }
-			      p++;
-			      q++;
-			      while (1) {
-			        *p = *q;
-			        if (*p == '\0') {
-			          break;
-			        }
-			        p++;
-			        q++;
-			      }
-			      len--;
-			    }
-			    r++;
-			  }
-			  yylval.stringVal.file = fileName;
-			  yylval.stringVal.line = lineNumber;
-			  yylval.stringVal.val = allocate(len + 1);
-			  strcpy(yylval.stringVal.val, yytext);
-			  return ASMCODE;
-			}
-
 {ID}			{
 			  len = strlen(yytext);
 			  yylval.stringVal.file = fileName;
@@ -638,6 +612,26 @@ void showToken(int token) {
       break;
     case ASM:
       printf("ASM in file %s, line %d",
+             yylval.noVal.file, yylval.noVal.line);
+      break;
+    case DOT_ADDR:
+      printf("DOT_ADDR in file %s, line %d",
+             yylval.noVal.file, yylval.noVal.line);
+      break;
+    case JMP:
+      printf("JMP in file %s, line %d",
+             yylval.noVal.file, yylval.noVal.line);
+      break;
+    case CALL:
+      printf("CALL in file %s, line %d",
+             yylval.noVal.file, yylval.noVal.line);
+      break;
+    case BRT:
+      printf("BRT in file %s, line %d",
+             yylval.noVal.file, yylval.noVal.line);
+      break;
+    case BRF:
+      printf("BRF in file %s, line %d",
              yylval.noVal.file, yylval.noVal.line);
       break;
     case COMMA:

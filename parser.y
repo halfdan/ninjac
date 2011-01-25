@@ -35,8 +35,9 @@ static Absyn *p;
 %token	<noVal>		LPAREN RPAREN LCURL RCURL LBRACK RBRACK
 %token	<noVal>		ASGN COMMA SEMIC DOT
 %token	<noVal>		LOGOR LOGAND LOGNOT
-%token	<noVal>		EQ NE LT LE GT GE REQ RNE
+%token	<noVal>		EQ NE LT LE GT GE REQ RNE NL
 %token	<noVal>		PLUS MINUS STAR SLASH PERCENT
+%token  <noVal>         CALL BRF BRT JMP DOT_ADDR
 %token	<intVal>	INTLIT
 %token	<intVal>	BOOLEANLIT
 %token	<intVal>	CHARLIT
@@ -70,6 +71,9 @@ static Absyn *p;
 %type	<node>		return_stm
 %type	<node>		call_stm
 %type	<node>		asm_stm
+%type	<node>		asm_instr
+%type	<node>		asm_instrlist
+%type	<node>		non_empty_asm_instrlist
 %type	<node>		arg_list
 %type	<node>		non_empty_arg_list
 %type	<node>		exp
@@ -427,10 +431,64 @@ call_stm		: IDENT LPAREN arg_list RPAREN SEMIC
 			  }
 			;
 
-asm_stm                 : ASM LCURL ASMCODE RCURL
+asm_stm                 : ASM LCURL PERCENT asm_instrlist PERCENT RCURL
                           {
-                            $$ = newAsmStm($1.file, $1.line, $3.val);
+                            $$ = newAsmStm($1.file, $1.line, $4);
                           }
+
+asm_instrlist           : {
+                            $$ = emptyAsmInstrList();
+                          }
+                        | non_empty_asm_instrlist
+                          {
+                            $$ = $1;
+                          }
+                        ;
+
+non_empty_asm_instrlist : asm_instr
+                          {
+                            $$ = newAsmInstrList($1, emptyAsmInstrList());
+                          }
+                        | asm_instr non_empty_asm_instrlist
+                          {
+                            $$ = newAsmInstrList($1, $2);
+                          }
+                        ;
+
+
+asm_instr               : IDENT
+                          {
+                            $$ = newAsmInstr0($1.file, $1.line, $1.val)
+                          }
+                        | IDENT INTLIT
+                          {
+                            $$ = newAsmInstr1($1.file, $1.line, $1.val, $2.val);
+                          }
+                        | IDENT INTLIT COMMA INTLIT
+                          {
+                            $$ = newAsmInstr2($1.file, $1.line, $1.val, $2.val, $4.val);
+                          }
+                        | DOT_ADDR IDENT
+                          {
+                            $$ = newAsmInstr3($1.file, $1.line, ".addr", $2.val);
+                          }
+                        | BRF IDENT
+                          {
+                            $$ = newAsmInstr3($1.file, $1.line, "brf", $2.val);
+                          }
+                        | BRT IDENT
+                          {
+                            $$ = newAsmInstr3($1.file, $1.line, "brt", $2.val);
+                          }
+                        | CALL IDENT
+                          {
+                            $$ = newAsmInstr3($1.file, $1.line, "call", $2.val);
+                          }
+                        | JMP IDENT
+                          {
+                            $$ = newAsmInstr3($1.file, $1.line, "jmp", $2.val);
+                          }
+                        ;
 
 arg_list		: /* empty */
 			  {
