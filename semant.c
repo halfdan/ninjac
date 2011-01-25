@@ -612,7 +612,11 @@ static void makeVMT(Class *class, char *fileName) {
         makeVMT(class->superClass, fileName);
     }
 
-    vmt = copyVMT(class->superClass->vmt);
+    if (class->metaClass != NULL) {
+        vmt = copyVMT(class->superClass->vmt);
+    } else {
+        vmt = newEmptyVMT();
+    }
 
     traverseTable(class, fileName, vmt);
     class->vmt = vmt;
@@ -638,6 +642,8 @@ static void checkClassDec(
     char *superClassName;
     Class *class;
     Class *metaClass;
+    int numFields;
+    int numMethods;
 
     switch(pass) {
         case 0:
@@ -767,14 +773,39 @@ static void checkClassDec(
             /* here will be the evaluation of the instance variable offsets */
             /* Lookup current class entry */
             classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
+
             makeVMT(classEntry->u.classEntry.class, node->file);
             makeInstanceVariableOffsets(classEntry->u.classEntry.class, node->file);
+
+            /* count number of methods in a class*/
+            numMethods = countMethods(classEntry->u.classEntry.class->vmt);
+            classEntry->u.classEntry.class->numMethods = numMethods;
+            /* count number of fields in a class*/
+            numFields = countFields(classEntry->u.classEntry.class->attibuteList);
+            classEntry->u.classEntry.class->numFields = numFields;
+
             makeVMT(classEntry->u.classEntry.class->metaClass, node->file);
             makeInstanceVariableOffsets(classEntry->u.classEntry.class->metaClass, node->file);
-/*            printf("instVars of %s\n", classEntry->u.classEntry.class->name->string);
-            showInstanceVar(classEntry->u.classEntry.class->attibuteList, 0);*/
-            printf("instVars of %s\n", classEntry->u.classEntry.class->metaClass->name->string);
-            showInstanceVar(classEntry->u.classEntry.class->metaClass->attibuteList, 0);
+
+            /* count number of methods in a meta class*/
+            numMethods = countMethods(classEntry->u.classEntry.class->metaClass->vmt);
+            classEntry->u.classEntry.class->metaClass->numMethods = numMethods;
+            /* count number of fields in a meta class*/
+            numFields = countFields(classEntry->u.classEntry.class->metaClass->attibuteList);
+            classEntry->u.classEntry.class->metaClass->numFields = numFields;
+
+            printf("number of fields of %s: %d\n",
+                    classEntry->u.classEntry.class->name->string,
+                    classEntry->u.classEntry.class->numFields);
+            printf("number of methods of %s: %d\n",
+                    classEntry->u.classEntry.class->name->string,
+                    classEntry->u.classEntry.class->numMethods);
+            printf("number of fields of %s: %d\n",
+                    classEntry->u.classEntry.class->metaClass->name->string,
+                    classEntry->u.classEntry.class->metaClass->numFields);
+            printf("number of methods of %s: %d\n",
+                    classEntry->u.classEntry.class->metaClass->name->string,
+                    classEntry->u.classEntry.class->metaClass->numMethods);
             break;
         default: {
             error("This should never happen! You have found an invalid pass.");

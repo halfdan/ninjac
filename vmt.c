@@ -110,3 +110,14 @@ void printVMT(FILE* file, VMT* vmt) {
     }
     fprintf(file, "\n");
 }
+
+int countMethods(VMT *vmt) {
+    int count = 0;
+
+    while(!vmt->isEmpty) {
+        count++;
+        vmt = vmt->next;
+    }
+
+    return count;
+}

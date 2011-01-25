@@ -218,7 +218,7 @@ char *disasm(unsigned int *code, int addr) {
       sprintf(buffer, "popg");
       break;
     default:
-      printf("illegal instruction 0x%08X at address 0x%08X",
+      printf("illegal instruction 0x%08X at address 0x%08X\n",
             instr, addr);
   }
   return buffer;

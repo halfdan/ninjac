@@ -30,4 +30,6 @@ void showInstanceVar(InstanceVar* src, int indent);
 
 void makeInstanceVariableOffsets(Class *class, char *fileName);
 
+int countFields(InstanceVar *attList);
+
 #endif	/* INSTANCE_H */

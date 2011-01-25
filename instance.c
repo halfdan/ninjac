@@ -165,3 +165,15 @@ void makeInstanceVariableOffsets(Class *class, char *fileName) {
     traverseTable(class, class->name, newSym(fileName), tmp);
     class->attibuteList = tmp;
 }
+
+
+int countFields(InstanceVar *attList) {
+    int count = 0;
+
+    while(!attList->isEmpty) {
+        count++;
+        attList = attList->next;
+    }
+
+    return count;
+}

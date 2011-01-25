@@ -31,6 +31,8 @@ Class *newClass(boolean isPublic, Sym *name, char *fileName,
   class->mbrTable = mbrTable;
   class->vmt = NULL;
   class->attibuteList = NULL;
+  class->numFields = 0;
+  class->numMethods = 0;
   return class;
 }
 

@@ -28,5 +28,7 @@ void appendVMT(VMT* src, Sym *name, char *className, char *fileName);
 void showVMT(VMT* src, int indent);
 void printVMT(FILE* file, VMT* vmt);
 
+int countMethods(VMT *vmt);
+
 #endif	/* VMT_H */
 
