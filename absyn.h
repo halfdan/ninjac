@@ -99,6 +99,7 @@ typedef struct absyn {
       boolean stat;		/* is this a class method? */
       boolean isConstructor;    /* is this a constructor? */
       Sym *name;		/* name of the method */
+      struct class *class;             /* class record belonging to */
       struct absyn *retType;	/* return type */
       struct absyn *params;	/* parameter variables */
       struct absyn *locals;	/* local variables */

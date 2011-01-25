@@ -1066,6 +1066,10 @@ static void checkMethodDec(
                     checkNode(stmtDec, fileTable, methodEntry->u.methodEntry.localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
                 }
             }
+
+            /* save actClass in methodNode */
+            node->u.methodDec.class = actClass;
+
             break;
         default: {
             error("Error: This should never happen! You have found an invalid pass.");

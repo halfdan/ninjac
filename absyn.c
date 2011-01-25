@@ -79,6 +79,7 @@ Absyn *newMethodDec(char *file, int line,
   node->u.methodDec.params = params;
   node->u.methodDec.locals = locals;
   node->u.methodDec.stms = stms;
+  node->u.methodDec.class = NULL;
   return node;
 }
 
