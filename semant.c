@@ -2531,28 +2531,6 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* Initialize trivial Classes */
     globalTable = newTable(NULL);
 
-    objectMetaClass = newClass(TRUE, newSym("$Object"), NULL, NULL, NULL, newTable(globalTable));
-    objectClass = newClass(TRUE, newSym("Object"), NULL, NULL, objectMetaClass, newTable(globalTable));
-    objectMetaClass->vmt = newEmptyVMT();
-    objectClass->vmt = newEmptyVMT();
-    objectMetaClass->attibuteList = newEmptyInstanceVar();
-    objectClass->attibuteList = newEmptyInstanceVar();
-    objectMetaEntry = newClassEntry(objectMetaClass);
-    objectEntry = newClassEntry(objectClass);
-    enter(globalTable, objectMetaClass->name, objectMetaEntry);
-    enter(globalTable, objectClass->name, objectEntry);
-
-    integerMetaClass = newClass(TRUE, newSym("$Integer"), NULL, NULL, NULL, newTable(globalTable));
-    integerClass = newClass(TRUE, newSym("Integer"), NULL, NULL, integerMetaClass, newTable(globalTable));
-    integerMetaClass->vmt = newEmptyVMT();
-    integerClass->vmt = newEmptyVMT();
-    integerMetaClass->attibuteList = newEmptyInstanceVar();
-    integerClass->attibuteList = newEmptyInstanceVar();
-    integerEntry = newClassEntry(integerClass);
-    integerMetaEntry = newClassEntry(integerMetaClass);
-    enter(globalTable, integerMetaClass->name, integerMetaEntry);
-    enter(globalTable, integerClass->name, integerEntry);
-
     booleanMetaClass = newClass(TRUE, newSym("$Boolean"), NULL, NULL, NULL, newTable(globalTable));
     booleanClass = newClass(TRUE, newSym("Boolean"), NULL, NULL, booleanMetaClass, newTable(globalTable));
     booleanMetaClass->vmt = newEmptyVMT();

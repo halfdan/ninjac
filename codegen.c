@@ -15,7 +15,7 @@
 static FILE *asmFile;
 
 /* Function decs */
-static void generateCodeNode(Absyn *node, Table *table, int returnLabel, int breakLabel);
+static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel);
 
 /* Function impl */
 
@@ -29,14 +29,14 @@ static char* newMethodLabel(char* filepath, char* classname, char* methodname, b
     /* Label: ClassName_MethodName (+2 for underlines, +8 for hash) */
     length = strlen(classname) + strlen(methodname) + 2 + 8;
     if (isStatic) {
-        /* If the method is static we prepend CLASS_ to the label */
-        length += strlen("CLASS_");
+        /* If the method is static we prepend $ to the label */
+        length += strlen("$");
     }
 
     label = (char *) allocate((length + 1) * sizeof (char *));
 
     if (isStatic) {
-        sprintf(label, "CLASS_%s_%s_%lx", classname, methodname, hash);
+        sprintf(label, "$%s_%s_%lx", classname, methodname, hash);
     } else {
         sprintf(label, "%s_%s_%lx", classname, methodname, hash);
     }
@@ -54,12 +54,12 @@ static void shouldNotReach(char *nodeName) {
     error("code generation should not reach '%s' node", nodeName);
 }
 
-static void generateCodeFile(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeFile(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     fprintf(asmFile, "// File \"%s\"\n", node->file);
-    generateCodeNode(node->u.file.classes, table, returnLabel, breakLabel);
+    generateCodeNode(node->u.file.classes, table, currentMethod, returnLabel, breakLabel);
 }
 
-static void generateCodeClsList(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeClsList(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     Absyn *classList;
     Absyn *classDec;
 
@@ -71,20 +71,20 @@ static void generateCodeClsList(Absyn *node, Table *table, int returnLabel, int 
                 classList = classList->u.clsList.tail,
                 classDec = classList->u.clsList.head) {
 
-            generateCodeNode(classDec, table, returnLabel, breakLabel);
+            generateCodeNode(classDec, table, currentMethod, returnLabel, breakLabel);
         }
     }
 }
 
-static void generateCodeClassDec(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeClassDec(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     Entry *classEntry = lookupClass(&table, (table)->outerScope, node->u.classDec.name);
     fprintf(asmFile, "// Class \"%s\"\n", node->u.classDec.name->string);
     fprintf(asmFile, "%s_%lx:\n", node->u.classDec.name->string, djb2(node->file));
     printVMT(asmFile, classEntry->u.classEntry.class->vmt);
-    generateCodeNode(node->u.classDec.members, classEntry->u.classEntry.class->mbrTable, returnLabel, breakLabel);
+    generateCodeNode(node->u.classDec.members, classEntry->u.classEntry.class->mbrTable, currentMethod, returnLabel, breakLabel);
 }
 
-static void generateCodeMbrList(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeMbrList(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     Absyn *memberList;
     Absyn *memberDec;
 
@@ -96,28 +96,28 @@ static void generateCodeMbrList(Absyn *node, Table *table, int returnLabel, int 
                 memberList = memberList->u.mbrList.tail,
                 memberDec = memberList->u.mbrList.head) {
 
-            generateCodeNode(memberDec, table, returnLabel, breakLabel);
+            generateCodeNode(memberDec, table, currentMethod, returnLabel, breakLabel);
         }
     }
 }
 
-static void generateCodeFieldDec(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeFieldDec(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     /* nothing to generate here */
 }
 
-static void generateCodeMethodDec(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeMethodDec(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     Entry *methodEntry;
     char* methodLabel;
     int newRetLabel;
 
-    methodEntry = lookup(table, node->u.methodDec.name, ENTRY_KIND_METHOD);
+    methodEntry = lookupMember(node->u.methodDec.class, node->u.methodDec.name, ENTRY_KIND_METHOD);
     methodLabel = newMethodLabel(node->file, methodEntry->u.methodEntry.class->name->string, node->u.methodDec.name->string, methodEntry->u.methodEntry.isStatic);
 
     fprintf(asmFile, "%s:\n", methodLabel);
     fprintf(asmFile, "\tasf\t%d\n", methodEntry->u.methodEntry.numLocals);
 
     newRetLabel = newLabel();
-    generateCodeNode(node->u.methodDec.stms, methodEntry->u.methodEntry.localTable, newRetLabel, breakLabel);
+    generateCodeNode(node->u.methodDec.stms, methodEntry->u.methodEntry.localTable, methodEntry, newRetLabel, breakLabel);
 
     /* generate function epilog */
     fprintf(asmFile, "_L%d:\n", newRetLabel);
@@ -128,7 +128,7 @@ static void generateCodeMethodDec(Absyn *node, Table *table, int returnLabel, in
     free(methodLabel);
 }
 
-static void generateCodeStmsList(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeStmsList(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     Absyn *stmsList;
     Absyn *stmsDec;
 
@@ -140,60 +140,61 @@ static void generateCodeStmsList(Absyn *node, Table *table, int returnLabel, int
                 stmsList = stmsList->u.stmList.tail,
                 stmsDec = stmsList->u.stmList.head) {
 
-            generateCodeNode(stmsDec, table, returnLabel, breakLabel);
+            generateCodeNode(stmsDec, table, currentMethod, returnLabel, breakLabel);
         }
     }
 }
 
-static void generateCodeAsmStmt(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeAsmStmt(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     fprintf(asmFile, "%s\n", node->u.asmStm.code);
 }
 
-static void generateCodeEmptyStm(Absyn *node, Table *table,
+static void generateCodeEmptyStm(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     /* nothing to generate here */
 }
 
-static void generateCodeCompStmt(Absyn *node, Table *table,
+static void generateCodeCompStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
-    generateCodeNode(node->u.compStm.stms, table, returnLabel, breakLabel);
+    generateCodeNode(node->u.compStm.stms, table, currentMethod, returnLabel, breakLabel);
 }
 
-static void generateCodeAssignStmt(Absyn *node, Table *table,
+static void generateCodeAssignStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
+    /* ToDo: Assignment, field/member/local variable lookup */
 
 }
 
-static void generateCodeIfStmt1(Absyn *node, Table *table,
+static void generateCodeIfStmt1(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
     int label1;
 
     label1 = newLabel();
-    generateCodeNode(node->u.ifStm1.test, table, returnLabel, breakLabel);
+    generateCodeNode(node->u.ifStm1.test, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "\tbrf\t_L%d\n", label1);
-    generateCodeNode(node->u.ifStm1.thenPart, table, returnLabel, breakLabel);
+    generateCodeNode(node->u.ifStm1.thenPart, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "_L%d:\n", label1);
 }
 
-static void generateCodeIfStmt2(Absyn *node, Table *table,
+static void generateCodeIfStmt2(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
     int label1, label2;
 
     label1 = newLabel();
     label2 = newLabel();
-    generateCodeNode(node->u.ifStm2.test, table, returnLabel, breakLabel);
+    generateCodeNode(node->u.ifStm2.test, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "\tbrf\t_L%d\n", label1);
-    generateCodeNode(node->u.ifStm2.thenPart, table, returnLabel, breakLabel);
+    generateCodeNode(node->u.ifStm2.thenPart, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "\tjmp\t_L%d\n", label2);
     fprintf(asmFile, "_L%d:\n", label1);
-    generateCodeNode(node->u.ifStm2.elsePart, table, returnLabel, breakLabel);
+    generateCodeNode(node->u.ifStm2.elsePart, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "_L%d:\n", label2);
 }
 
-static void generateCodeWhileStmt(Absyn *node, Table *table,
+static void generateCodeWhileStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     int label1, label2, newBreakLabel;
 
@@ -202,27 +203,27 @@ static void generateCodeWhileStmt(Absyn *node, Table *table,
     newBreakLabel = newLabel();
     fprintf(asmFile, "\tjmp\t_L%d\n", label2);
     fprintf(asmFile, "_L%d:\n", label1);
-    generateCodeNode(node->u.whileStm.body, table, returnLabel, newBreakLabel);
+    generateCodeNode(node->u.whileStm.body, table, currentMethod, returnLabel, newBreakLabel);
     fprintf(asmFile, "_L%d:\n", label2);
-    generateCodeNode(node->u.whileStm.test, table, returnLabel, newBreakLabel);
+    generateCodeNode(node->u.whileStm.test, table, currentMethod, returnLabel, newBreakLabel);
     fprintf(asmFile, "\tbrt\t_L%d\n", label1);
     fprintf(asmFile, "_L%d:\n", newBreakLabel);
 }
 
-static void generateCodeDoStmt(Absyn *node, Table *table,
+static void generateCodeDoStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     int label1, newBreakLabel;
 
     label1 = newLabel();
     newBreakLabel = newLabel();
     fprintf(asmFile, "_L%d:\n", label1);
-    generateCodeNode(node->u.doStm.body, table, returnLabel, newBreakLabel);
-    generateCodeNode(node->u.doStm.test, table, returnLabel, newBreakLabel);
+    generateCodeNode(node->u.doStm.body, table, currentMethod, returnLabel, newBreakLabel);
+    generateCodeNode(node->u.doStm.test, table, currentMethod, returnLabel, newBreakLabel);
     fprintf(asmFile, "\tbrt\t_L%d\n", label1);
     fprintf(asmFile, "_L%d:\n", newBreakLabel);
 }
 
-static void generateCodeBreakStmt(Absyn *node, Table *table,
+static void generateCodeBreakStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     if (breakLabel == -1) {
         error("no valid break label in genCodeBreakStm");
@@ -230,7 +231,7 @@ static void generateCodeBreakStmt(Absyn *node, Table *table,
     fprintf(asmFile, "\tjmp\t_L%d\n", breakLabel);
 }
 
-static void generateCodeRetStmt(Absyn *node, Table *table,
+static void generateCodeRetStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     if (returnLabel == -1) {
         error("no valid return label in genCodeRetStm");
@@ -238,14 +239,48 @@ static void generateCodeRetStmt(Absyn *node, Table *table,
     fprintf(asmFile, "\tjmp\t_L%d\n", returnLabel);
 }
 
-static void generateCodeRetExpStmt(Absyn *node, Table *table,
+static void generateCodeRetExpStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
-    generateCodeNode(node->u.retExpStm.exp, table, returnLabel, breakLabel);
+    generateCodeNode(node->u.retExpStm.exp, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "\tpopr\n");
     if (returnLabel == -1) {
         error("no valid return label in genCodeRetExpStm");
     }
     fprintf(asmFile, "\tjmp\t_L%d\n", returnLabel);
+}
+
+static void generateCodeSuperExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+    shouldNotReach("SuperExp");
+}
+
+static void generateCodeCallExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+
+
+    /* We need to switch over the receiver of the callExp */
+    switch(node->u.callExp.rcvr->type) {
+        case ABSYN_SUPEREXP:
+            break;
+        case ABSYN_SELFEXP:
+            break;
+        default:
+            generateCodeNode(node->u.callExp.rcvr, table, currentMethod, returnLabel, breakLabel);
+            break;
+    }
+
+    generateCodeNode(node->u.callExp.args, table, currentMethod, returnLabel, breakLabel);
+}
+
+static void generateCodeNewArrayExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+
+    Entry *classEntry = lookup(table, node->u.newArrayExp.type, ENTRY_KIND_CLASS);
+
+    generateCodeNode(node->u.newArrayExp.size, table, currentMethod, returnLabel, breakLabel);
+
+    fprintf(asmFile, "\tnewa\n");
+    fprintf(asmFile, "\t.addr %s_%lx", node->u.newArrayExp.type->string, djb2(classEntry->u.classEntry.class->fileName));
 }
 
 static void generateProlog(Table* table) {
@@ -256,12 +291,12 @@ static void generateProlog(Table* table) {
     fprintf(asmFile, "// execution framework\n");
     fprintf(asmFile, "//\n");
     fprintf(asmFile, "_start:\n");
-    fprintf(asmFile, "\tcall\tCLASS_Main_main_%lx\n", djb2(mainClass->u.classEntry.class->fileName));
+    fprintf(asmFile, "\tcall\t$Main_main_%lx\n", djb2(mainClass->u.classEntry.class->fileName));
     fprintf(asmFile, "\tcall\t_exit\n");
     /* void exit() */
     fprintf(asmFile, "\n");
     fprintf(asmFile, "//\n");
-    fprintf(asmFile, "// void exit()\n");
+    fprintf(asmFile, "// _exit()\n");
     fprintf(asmFile, "//\n");
     fprintf(asmFile, "_exit:\n");
     fprintf(asmFile, "\tasf\t0\n");
@@ -270,22 +305,22 @@ static void generateProlog(Table* table) {
     fprintf(asmFile, "\tret\n");
 }
 
-static void generateCodeNode(Absyn *node, Table *table, int returnLabel, int breakLabel) {
+static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
     if (node == NULL) {
         error("generateCodeNode got NULL node pointer");
     }
     switch (node->type) {
         case ABSYN_FILE: /* 0 */
-            generateCodeFile(node, table, returnLabel, breakLabel);
+            generateCodeFile(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_CLASSDEC: /* 1 */
-            generateCodeClassDec(node, table, returnLabel, breakLabel);
+            generateCodeClassDec(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_FIELDDEC: /* 2 */
-            generateCodeFieldDec(node, table, returnLabel, breakLabel);
+            generateCodeFieldDec(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_METHODDEC: /* 3 */
-            generateCodeMethodDec(node, table, returnLabel, breakLabel);
+            generateCodeMethodDec(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_VOIDTY: /* 4 */
             shouldNotReach("VoidTy");
@@ -303,34 +338,34 @@ static void generateCodeNode(Absyn *node, Table *table, int returnLabel, int bre
             shouldNotReach("VarDec");
             break;
         case ABSYN_EMPTYSTM: /* 9 */
-            generateCodeEmptyStm(node, table, returnLabel, breakLabel);
+            generateCodeEmptyStm(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_COMPSTM: /* 10 */
-            generateCodeCompStmt(node, table, returnLabel, breakLabel);
+            generateCodeCompStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_ASSIGNSTM: /* 11 */
-            generateCodeAssignStmt(node, table, returnLabel, breakLabel);
+            generateCodeAssignStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_IFSTM1: /* 12 */
-            generateCodeIfStmt1(node, table, returnLabel, breakLabel);
+            generateCodeIfStmt1(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_IFSTM2: /* 13 */
-            generateCodeIfStmt2(node, table, returnLabel, breakLabel);
+            generateCodeIfStmt2(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_WHILESTM: /* 14 */
-            generateCodeWhileStmt(node, table, returnLabel, breakLabel);
+            generateCodeWhileStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_DOSTM: /* 15 */
-            generateCodeDoStmt(node, table, returnLabel, breakLabel);
+            generateCodeDoStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_BREAKSTM: /* 16 */
-            generateCodeBreakStmt(node, table, returnLabel, breakLabel);
+            generateCodeBreakStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_RETSTM: /* 17 */
-            generateCodeRetStmt(node, table, returnLabel, breakLabel);
+            generateCodeRetStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_RETEXPSTM: /* 18 */
-            generateCodeRetExpStmt(node, table, returnLabel, breakLabel);
+            generateCodeRetExpStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_CALLSTM: /* 19 */
             break;
@@ -355,14 +390,17 @@ static void generateCodeNode(Absyn *node, Table *table, int returnLabel, int bre
         case ABSYN_SELFEXP: /* 29 */
             break;
         case ABSYN_SUPEREXP: /* 30 */
+            generateCodeSuperExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_VAREXP: /* 31 */
             break;
         case ABSYN_CALLEXP: /* 32 */
+            generateCodeCallExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_NEWEXP: /* 33 */
             break;
         case ABSYN_NEWARRAYEXP: /* 34 */
+            generateCodeNewArrayExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_SIMPLEVAR: /* 35 */
             break;
@@ -371,22 +409,22 @@ static void generateCodeNode(Absyn *node, Table *table, int returnLabel, int bre
         case ABSYN_MEMBERVAR: /* 37 */
             break;
         case ABSYN_CLSLIST: /* 38 */
-            generateCodeClsList(node, table, returnLabel, breakLabel);
+            generateCodeClsList(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_MBRLIST: /* 39 */
-            generateCodeMbrList(node, table, returnLabel, breakLabel);
+            generateCodeMbrList(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_PARLIST: /* 40 */
             break;
         case ABSYN_VARLIST: /* 41 */
             break;
         case ABSYN_STMLIST: /* 42 */
-            generateCodeStmsList(node, table, returnLabel, breakLabel);
+            generateCodeStmsList(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_EXPLIST: /* 43 */
             break;
         case ABSYN_ASMSTM: /* 44 */
-            generateCodeAsmStmt(node, table, returnLabel, breakLabel);
+            generateCodeAsmStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         default:
             /* this should never happen */
@@ -399,9 +437,9 @@ void generateCode(Absyn *fileTrees[], int numInFiles, Table **fileTables, FILE *
     asmFile = outFile;
 
     /* fileTables[0]->outerScope is the global table! */
-    /* generateProlog(fileTables[0]->outerScope); */
+    generateProlog(fileTables[0]->outerScope);
 
     for (i = 0; i < numInFiles; i++) {
-        generateCodeNode(fileTrees[i], fileTables[i], -1, -1);
+        generateCodeNode(fileTrees[i], fileTables[i], NULL, -1, -1);
     }
 }

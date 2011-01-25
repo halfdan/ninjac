@@ -113,6 +113,13 @@ class_dec		: PUBLIC CLASS IDENT EXTENDS IDENT
 			                     TRUE, newSym($3.val),
 			                     newSym($5.val), $7);
 			  }
+                        | PUBLIC CLASS IDENT EXTENDS NIL
+			  LCURL member_dec_list RCURL
+			  {
+			    $$ = newClassDec($2.file, $2.line,
+			                     TRUE, newSym($3.val),
+			                     NULL, $7);
+			  }
 			| CLASS IDENT EXTENDS IDENT
 			  LCURL member_dec_list RCURL
 			  {

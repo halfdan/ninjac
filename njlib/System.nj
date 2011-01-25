@@ -1,0 +1,22 @@
+public class System extends Object {
+
+	public static void writeInteger(Integer i) {
+		asm {%
+			pushl -3
+			wrint
+		%}
+	}
+
+	public static void writeBoolean(Boolean b) {
+		asm {%
+			// here be boolean dragons			
+		%}
+	}
+
+	public static void writeCharacter(Character c) {
+		asm {%
+			// here be character dragons
+		%}
+	}
+
+}
