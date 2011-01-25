@@ -1,18 +1,11 @@
 //
-// boolean test in if-statement
+// assignment to local variable
 //
 
 public class Main extends Object {
   
   public static void main() {
-    f1(true);
-  }
-
-  void f1(Boolean b) {
     local Integer x;
-    if (true) {
       x = 42;
-    }
   }
-
 }

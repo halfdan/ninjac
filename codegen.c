@@ -223,10 +223,47 @@ static void generateCodeCompStmt(Absyn *node, Table *table, Entry *currentMethod
     generateCodeNode(node->u.compStm.stms, table, currentMethod, returnLabel, breakLabel);
 }
 
+static Sym *getVarName(Absyn *varNode) {
+    while(varNode->type != ABSYN_SIMPLEVAR) {
+        switch(varNode->type) {
+            case ABSYN_ARRAYVAR: {
+                varNode = varNode->u.arrayVar.var->u.varExp.var;
+                break;
+            }
+            case ABSYN_VAREXP : {
+                varNode = varNode->u.varExp.var;
+                break;
+            }
+            default: {
+                shouldNotReach("getVarName got some unknown Var-Type");
+            }
+        }
+    }
+    return varNode->u.simpleVar.name;
+}
+
 static void generateCodeAssignStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
-    /* ToDo: Assignment, field/member/local variable lookup */
+    Absyn *varNode = node->u.assignStm.var;
+    Absyn *exp = node->u.assignStm.exp;
+    Sym *name = getVarName(varNode);
+
+    Entry *entry = lookup(currentMethod->u.methodEntry.localTable, name, ENTRY_KIND_VARIABLE);
+
+    if (entry != NULL) {
+        generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+        fprintf(asmFile, "\tpushl\t%d\n", entry->u.variableEntry.offset);
+    }
+/*    Absyn *varVar = var->u.varExp.var;*/
+/*    Type *varType = var->u.varExp.expType;*/
+/*    Entry *varEntry;*/
+
+
+/*    ->u.varExp.var;
+    node->u.assignStm.exp;node->u.assignStm.var->u.varExp.var
+    ->type;
+*/    /* ToDo: Assignment, field/member/local variable lookup */
 
 }
 
