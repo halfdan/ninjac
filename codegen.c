@@ -399,7 +399,7 @@ static void generateCodeNewExp(Absyn *node, Table *table, Entry *currentMethod,
         generateCodeNode(node->u.newExp.args, table, currentMethod, returnLabel, breakLabel);
         offset = findVMT(class->metaClass->vmt, class->name);
         /* ToDo */
-        fprintf(asmFile, "\tvmcall\t%d,%d", 0, offset);
+        fprintf(asmFile, "\tvmcall\t%d,%d\n", 0, offset);
     }
 }
 
@@ -411,7 +411,7 @@ static void generateCodeNewArrayExp(Absyn *node, Table *table, Entry *currentMet
     generateCodeNode(node->u.newArrayExp.size, table, currentMethod, returnLabel, breakLabel);
 
     fprintf(asmFile, "\tnewa\n");
-    fprintf(asmFile, "\t.addr %s_%lx", node->u.newArrayExp.type->string, djb2(classEntry->u.classEntry.class->fileName));
+    fprintf(asmFile, "\t.addr %s_%lx\n", node->u.newArrayExp.type->string, djb2(classEntry->u.classEntry.class->fileName));
 }
 
 
