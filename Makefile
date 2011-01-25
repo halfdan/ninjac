@@ -13,6 +13,7 @@ SRCS = main.c utils.c parser.tab.c lex.yy.c sym.c \
 
 OBJS = $(patsubst %.c,%.o,$(SRCS))
 BIN = njc
+DIRS = nja njvm disasm
 
 .PHONY:		all tests clean
 
@@ -52,6 +53,7 @@ clean:
 		rm -f parser.tab.h parser.tab.c lex.yy.c depend.mak
 		rm -f tests/*~ tests/*.asm
 		rm -f test_fm/*.out test_fm/*.tmp
+		-for d in $(DIRS); do (cd $$d; $(MAKE) clean ); done
 
 test:
 		./autotest.pl
