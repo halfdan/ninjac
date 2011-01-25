@@ -318,6 +318,7 @@ Absyn *newBinopExp(char *file, int line,
   node->u.binopExp.op = op;
   node->u.binopExp.left = left;
   node->u.binopExp.right = right;
+  node->u.binopExp.expType = NULL;
   return node;
 }
 
@@ -332,6 +333,7 @@ Absyn *newUnopExp(char *file, int line,
   node->line = line;
   node->u.unopExp.op = op;
   node->u.unopExp.right = right;
+  node->u.unopExp.expType = NULL;
   return node;
 }
 
@@ -346,6 +348,7 @@ Absyn *newInstofExp(char *file, int line,
   node->line = line;
   node->u.instofExp.exp = exp;
   node->u.instofExp.type = type;
+  node->u.instofExp.expType = NULL;
   return node;
 }
 
@@ -360,6 +363,7 @@ Absyn *newCastExp(char *file, int line,
   node->line = line;
   node->u.castExp.exp = exp;
   node->u.castExp.type = type;
+  node->u.castExp.expType = NULL;
   return node;
 }
 
@@ -371,6 +375,7 @@ Absyn *newNilExp(char *file, int line) {
   node->type = ABSYN_NILEXP;
   node->file = file;
   node->line = line;
+  node->u.nilExp.expType = NULL;
   return node;
 }
 
@@ -384,6 +389,7 @@ Absyn *newIntExp(char *file, int line,
   node->file = file;
   node->line = line;
   node->u.intExp.value = value;
+  node->u.intExp.expType = NULL;
   return node;
 }
 
@@ -397,6 +403,7 @@ Absyn *newBoolExp(char *file, int line,
   node->file = file;
   node->line = line;
   node->u.boolExp.value = value;
+  node->u.boolExp.expType = NULL;
   return node;
 }
 
@@ -410,6 +417,7 @@ Absyn *newCharExp(char *file, int line,
   node->file = file;
   node->line = line;
   node->u.charExp.value = value;
+  node->u.charExp.expType = NULL;
   return node;
 }
 
@@ -423,6 +431,7 @@ Absyn *newStringExp(char *file, int line,
   node->file = file;
   node->line = line;
   node->u.stringExp.value = value;
+  node->u.stringExp.expType = NULL;
   return node;
 }
 
@@ -434,6 +443,7 @@ Absyn *newSelfExp(char *file, int line) {
   node->type = ABSYN_SELFEXP;
   node->file = file;
   node->line = line;
+  node->u.selfExp.expType = NULL;
   return node;
 }
 
@@ -445,6 +455,7 @@ Absyn *newSuperExp(char *file, int line) {
   node->type = ABSYN_SUPEREXP;
   node->file = file;
   node->line = line;
+  node->u.superExp.expType = NULL;
   return node;
 }
 
@@ -458,6 +469,7 @@ Absyn *newVarExp(char *file, int line,
   node->file = file;
   node->line = line;
   node->u.varExp.var = var;
+  node->u.varExp.expType = NULL;
   return node;
 }
 
@@ -473,6 +485,7 @@ Absyn *newCallExp(char *file, int line,
   node->u.callExp.name = name;
   node->u.callExp.rcvr = rcvr;
   node->u.callExp.args = args;
+  node->u.callExp.expType =  NULL;
   return node;
 }
 
@@ -487,6 +500,7 @@ Absyn *newNewExp(char *file, int line,
   node->line = line;
   node->u.newExp.type = type;
   node->u.newExp.args = args;
+  node->u.newExp.expType = NULL;
   return node;
 }
 
@@ -501,6 +515,7 @@ Absyn *newNewArrayExp(char *file, int line,
   node->u.newArrayExp.type = type;
   node->u.newArrayExp.size = size;
   node->u.newArrayExp.dims = dims;
+  node->u.newArrayExp.expType = NULL;
   return node;
 }
 

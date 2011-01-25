@@ -120,9 +120,6 @@ typedef struct absyn {
     struct {
       Sym *type;
       int dims;
-      
-      /*struct absyn *size;	 size, only used in newExp */
-      /*struct absyn *baseType;	 the array type's base type */
     } arrayTy;
     struct {
       Sym *name;		/* the parameter's name */
@@ -201,56 +198,71 @@ typedef struct absyn {
       int op;			/* operation */
       struct absyn *left;	/* left operand expression */
       struct absyn *right;	/* right operand expression */
+      struct type *expType;     /* type of expression */
     } binopExp;
     struct {
       int op;			/* operation */
       struct absyn *right;	/* (right) operand expression */
+      struct type *expType;     /* type of expression */
     } unopExp;
     struct {
       struct absyn *exp;	/* expression */
       struct absyn *type;	/* type */
+      struct type *expType;     /* type of expression */
     } instofExp;
     struct {
       struct absyn *exp;	/* expression */
       struct absyn *type;	/* type */
+      struct type *expType;     /* type of expression */
     } castExp;
     struct {
       int dummy;		/* empty struct not allowed in C */
+      struct type *expType;     /* type of expression */
     } nilExp;
     struct {
       int value;		/* the integer literal's value */
+      struct type *expType;     /* type of expression */
     } intExp;
     struct {
       int value;		/* the boolean literal's value */
+      struct type *expType;     /* type of expression */
     } boolExp;
     struct {
       char value;		/* the character literal's value */
+      struct type *expType;     /* type of expression */
     } charExp;
     struct {
       char *value;		/* the string literal's value */
+      struct type *expType;     /* type of expression */
     } stringExp;
     struct {
       int dummy;		/* empty struct not allowed in C */
+      struct type *expType;     /* type of expression */
     } selfExp;
     struct {
       int dummy;		/* empty struct not allowed in C */
+      struct type *expType;     /* type of expression */
     } superExp;
     struct {
       struct absyn *var;	/* variable */
+      struct type *expType;     /* type of expression */
     } varExp;
     struct {
       Sym *name;		/* method name */
       struct absyn *rcvr;	/* receiver expression */
       struct absyn *args;	/* argument expressions */
+      struct type *expType;     /* type of expression */
     } callExp;
     struct {
       Sym *type;		/* class name */
       struct absyn *args;	/* args */
+      struct type *expType;     /* type of expression */
     } newExp;
     struct {
       Sym *type;		/* type name */
       struct absyn *size;       /* size of first dimension */
       int dims;                 /* number of dimensions*/
+      struct type *expType;     /* type of expression */
     } newArrayExp;
     struct {
       Sym *name;		/* the simple variable's name */

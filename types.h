@@ -35,7 +35,7 @@ void makeMetaClass(Class * class);
 #define TYPE_KIND_ARRAY		3
 
 
-typedef struct {
+typedef struct type {
   int kind;
   int isStatic;                 /* for static type evaluations */
   union {

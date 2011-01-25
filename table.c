@@ -257,12 +257,16 @@ Entry *lookupMember(Class *class, Sym *sym, int kind) {
                     entry->u.variableEntry.isStatic = TRUE;
                     break;
                 case ENTRY_KIND_METHOD:
-                    entry->u.methodEntry.isStatic = TRUE;
+                    /* if static method is the constructor don't switch to static */
+                    if (entry->u.methodEntry.retType != NULL) {
+                        entry->u.methodEntry.isStatic = TRUE;
+                    }
                     break;
                 default:
                     error("you got it wrong in lookupMember!");
                     break;
             }
+
             return entry;
         }
         tmpClass = tmpClass->superClass;

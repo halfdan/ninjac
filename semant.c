@@ -39,8 +39,10 @@
  * function like the actual class. This is not because we are too lazy to implement
  * a new parameter but because we have no 'Type Method' */
 Entry *actMethod;
-/* same with localOffset*/
+/* same with localOffset */
 int localOffset;
+/* same with paramOffset */
+int paramOffset;
 
 static void checkNode(
         Absyn *node,
@@ -695,40 +697,54 @@ static void checkClassDec(
             classEntry = lookupClass(fileTable, globalTable, node->u.classDec.name);
             /* Lookup meta class entry, should never be NULL */
             metaClassEntry = lookupClass(fileTable, globalTable, metaClassName(node->u.classDec.name));
-            /* Lookup entry of the supposed superclass */
-            superClassEntry = lookupClass(fileTable, globalTable, node->u.classDec.superClass);
-            /* Lookup entry of the supposed superclass of meta class */
-            metaSuperClassEntry = lookupClass(fileTable, globalTable, metaClassName(node->u.classDec.superClass));
 
-            /* Did we find the superclass? */
-            if(superClassEntry == NULL) {
-                error("unknown superclass '%s' in '%s' on line %d",
-                        node->u.classDec.superClass->string,
-                        node->file,
-                        node->line);
+            /* special case if class is Object */
+            if ( strcmp(classEntry->u.classEntry.class->name->string, "Object") == 0 ) {
+                superClassEntry = NULL;
+                metaSuperClassEntry = NULL;
+
+                classEntry->u.classEntry.class->vmt = newEmptyVMT();
+                metaClassEntry->u.classEntry.class->vmt = newEmptyVMT();
+                classEntry->u.classEntry.class->attibuteList = newEmptyInstanceVar();
+                metaClassEntry->u.classEntry.class->attibuteList = newEmptyInstanceVar();
+
+            } else {
+                /* Lookup entry of the supposed superclass */
+                superClassEntry = lookupClass(fileTable, globalTable, node->u.classDec.superClass);
+                /* Lookup entry of the supposed superclass of meta class */
+                metaSuperClassEntry = lookupClass(fileTable, globalTable, metaClassName(node->u.classDec.superClass));
+
+                /* Did we find the superclass? */
+                if(superClassEntry == NULL) {
+                    error("unknown superclass '%s' in '%s' on line %d",
+                            node->u.classDec.superClass->string,
+                            node->file,
+                            node->line);
+                }
+
+                /* Did we find the meta superclass? */
+                if(metaSuperClassEntry == NULL) {
+                    error("unknown superclass of metaclass '%s' in '%s' on line %d",
+                            metaClassName(node->u.classDec.superClass)->string,
+                            node->file,
+                            node->line);
+                }
+
+                /* if the Superclass is a primitive class */
+                superClassName = symToString(superClassEntry->u.classEntry.class->name);
+                if (strcmp(superClassName, "Integer") == 0 ) {
+                    error("primitive class '%s' cannot be extended in '%s' on '%d",
+                            superClassName,
+                            node->file,
+                            node->line);
+                }
+
+                /* Set the superclass */
+                classEntry->u.classEntry.class->superClass = superClassEntry->u.classEntry.class;
+                /* Set the superclass of meta class */
+                metaClassEntry->u.classEntry.class->superClass = metaSuperClassEntry->u.classEntry.class;
+
             }
-
-            /* Did we find the meta superclass? */
-            if(metaSuperClassEntry == NULL) {
-                error("unknown superclass of metaclass '%s' in '%s' on line %d",
-                        metaClassName(node->u.classDec.superClass)->string,
-                        node->file,
-                        node->line);
-            }
-
-            /* if the Superclass is a primitive class */
-            superClassName = symToString(superClassEntry->u.classEntry.class->name);
-            if (strcmp(superClassName, "Integer") == 0 ) {
-                error("primitive class '%s' cannot be extended in '%s' on '%d",
-                        superClassName,
-                        node->file,
-                        node->line);
-            }
-
-            /* Set the superclass */
-            classEntry->u.classEntry.class->superClass = superClassEntry->u.classEntry.class;
-            /* Set the superclass of meta class */
-            metaClassEntry->u.classEntry.class->superClass = metaSuperClassEntry->u.classEntry.class;
 
             break;
         case 2:
@@ -794,18 +810,6 @@ static void checkClassDec(
             numFields = countFields(classEntry->u.classEntry.class->metaClass->attibuteList);
             classEntry->u.classEntry.class->metaClass->numFields = numFields;
 
-            printf("number of fields of %s: %d\n",
-                    classEntry->u.classEntry.class->name->string,
-                    classEntry->u.classEntry.class->numFields);
-            printf("number of methods of %s: %d\n",
-                    classEntry->u.classEntry.class->name->string,
-                    classEntry->u.classEntry.class->numMethods);
-            printf("number of fields of %s: %d\n",
-                    classEntry->u.classEntry.class->metaClass->name->string,
-                    classEntry->u.classEntry.class->metaClass->numFields);
-            printf("number of methods of %s: %d\n",
-                    classEntry->u.classEntry.class->metaClass->name->string,
-                    classEntry->u.classEntry.class->metaClass->numMethods);
             break;
         default: {
             error("This should never happen! You have found an invalid pass.");
@@ -896,7 +900,6 @@ static void checkMethodDec(
     Class *metaClass = actClass->metaClass;
     Entry* methodEntry;
     Entry* superClassMethodEntry;
-    Entry* tmpEntry;
     Type *tmpType;
     TypeList *paramTypes;
     TypeList *methodParamsList, *superClassParamsList;
@@ -941,6 +944,8 @@ static void checkMethodDec(
 
             /* Do we have params? */
             if(!paramList->u.parList.isEmpty) {
+                /* set the offset for the params to -2 */
+                paramOffset = -2;
                 /* Loop over all params in the list */
                 for(paramDec = paramList->u.parList.head;
                         paramList->u.parList.isEmpty == FALSE;
@@ -984,7 +989,7 @@ static void checkMethodDec(
 
             /* Add the entry to the classTable if non-static
              * otherwise add the entry to the classTable of the meta class */
-            if (node->u.methodDec.stat) {
+            if (node->u.methodDec.stat || node->u.methodDec.isConstructor) {
                 methodEntry->u.methodEntry.isStatic = FALSE;
                 if(NULL == enter(metaClass->mbrTable, node->u.methodDec.name, methodEntry)) {
                     /* We don't allow method overloading at this point in Ninja */
@@ -994,6 +999,7 @@ static void checkMethodDec(
                             node->line);
                 }
             } else {
+
                 if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
                     /* We don't allow method overloading at this point in Ninja */
                     error("Method already exists in class '%s' in file '%s' on line '%d'.",
@@ -1132,6 +1138,7 @@ static void checkParamDec(
             variableType = lookupTypeFromAbsyn(node->u.parDec.type, fileTable);
             /* Create new variable entry (a param is a local variable after all) */
             variableEntry = newVariableEntry(TRUE, FALSE, FALSE, variableType);
+            variableEntry->u.variableEntry.offset = paramOffset--;
             /* Add the entry to the localTable */
             if(NULL == enter(localTable, node->u.parDec.name, variableEntry)) {
                 /* Multiple definitions of variables are not allowed  */
@@ -1228,7 +1235,6 @@ static void checkFile(
 
     Absyn *classList = node->u.file.classes;
     Absyn *classDec;
-    Table *tmp;
     
     switch(pass) {
         case 0:
@@ -1457,7 +1463,8 @@ static void checkVarExp(
     }
 
     *returnType = *tmpType;
-    free(tmpType);
+    release(tmpType);
+    node->u.varExp.expType = returnType;
 }
 
 
@@ -1520,7 +1527,6 @@ static void checkArrayVar(
     Entry *varEntry;
     Type *indexType = allocate(sizeof(Type));
     Type *varType = allocate(sizeof(Type));
-    Type *tmpType;
 
     Absyn *index = node->u.arrayVar.index;
     Absyn *varExp = node->u.arrayVar.var;
@@ -1582,7 +1588,6 @@ static void checkMemberVar(
         int pass) {
 
     Absyn *object = node->u.memberVar.object;
-    Sym *name = node->u.memberVar.name;
     Entry *varEntry;
     Type *objectType = allocate(sizeof(Type));
     Type *actClassType;
@@ -1881,7 +1886,6 @@ static void checkCallStm(
     Entry *tmpEntry;
     int i;
     TypeList *paramList;
-    TypeList *argList;
     Absyn *args;
     Type *argType = allocate(sizeof(Type));
     Type *paramType;
@@ -1940,7 +1944,7 @@ static void checkCallStm(
     }
 
     /* lookup the method name in the receiver's member table */
-    methodEntry = lookup(rcvrType->u.simpleType.class->mbrTable, node->u.callStm.name, ENTRY_KIND_METHOD);
+    methodEntry = lookupMember(rcvrType->u.simpleType.class, node->u.callStm.name, ENTRY_KIND_METHOD);
     if (methodEntry == NULL) {
         error("method '%s' not found in '%s' on line %d",
                 node->u.callStm.name->string,
@@ -2212,6 +2216,7 @@ static void checkBinOpExp(
             break;
     }
 
+    node->u.binopExp.expType = returnType;
     free(leftType);
     free(rightType);
 }
@@ -2287,6 +2292,7 @@ static void checkUnOpExp(
     free(integerType);
     free(booleanType);
     free(rightType);
+    node->u.unopExp.expType = returnType;
 }
 
 static void checkInstanceOfExp(
@@ -2299,6 +2305,9 @@ static void checkInstanceOfExp(
         boolean breakAllowed,
         Type *returnType,
         int pass) {
+
+    Entry *booleanEntry = lookupClass(fileTable, globalTable, newSym("Boolean"));
+    Type *booleanType = newSimpleType(booleanEntry->u.classEntry.class);
 
     Absyn *exp = node->u.instofExp.exp;
     Absyn *type = node->u.instofExp.type;
@@ -2318,7 +2327,10 @@ static void checkInstanceOfExp(
                 node->file,
                 node->line);
     }
-    
+
+    *returnType = *booleanType;
+    free(booleanType);
+    node->u.instofExp.expType = returnType;
 }
 
 
@@ -2336,22 +2348,26 @@ static void checkCastExp(
     Absyn *exp = node->u.castExp.exp;
     Absyn *type = node->u.instofExp.type;
 
-    Type expType;
-    Type typeType;
+    Type *expType = allocate(sizeof(Type));
+    Type *typeType = allocate(sizeof(Type));
 
     /* determine type of exp */
     checkNode(exp, fileTable, localTable, actClass, classTable,
-            globalTable, breakAllowed, &expType, pass);
+            globalTable, breakAllowed, expType, pass);
     /* determine type of type */
     checkNode(type, fileTable, localTable, actClass, classTable,
-            globalTable, breakAllowed, &typeType, pass);
+            globalTable, breakAllowed, typeType, pass);
 
-    if( ! isStaticTypeOf(&typeType, &expType) ) {
+    if( ! isStaticTypeOf(typeType, expType) ) {
         error("'castto' has inconvertible types in '%s' on line %d",
                 node->file,
                 node->line);
     }
 
+    *returnType = *typeType;
+    release(expType);
+    release(typeType);
+    node->u.castExp.expType = returnType;
 }
 
 
@@ -2368,6 +2384,8 @@ static void checkNilExp(
     
     Type *nilType = newNilType();
     *returnType = *nilType;
+    release(nilType);
+    node->u.nilExp.expType = returnType;
 }
 
 
@@ -2384,6 +2402,8 @@ static void checkIntExp(
     Entry *integerEntry = lookupClass(fileTable, globalTable, newSym("Integer"));
     Type *integerType = newSimpleType(integerEntry->u.classEntry.class);
     *returnType = *integerType;
+    release(integerType);
+    node->u.intExp.expType = returnType;
 }
 
 
@@ -2400,6 +2420,8 @@ static void checkBoolExp(
     Entry *booleanEntry = lookupClass(fileTable, globalTable, newSym("Boolean"));
     Type *booleanType = newSimpleType(booleanEntry->u.classEntry.class);
     *returnType = *booleanType;
+    release(booleanType);
+    node->u.boolExp.expType = returnType;
 }
 
 
@@ -2416,6 +2438,8 @@ static void checkCharExp(
     Entry *characterEntry = lookupClass(fileTable, globalTable, newSym("Character"));
     Type *characterType = newSimpleType(characterEntry->u.classEntry.class);
     *returnType = *characterType;
+    release(characterType);
+    node->u.charExp.expType = returnType;
 }
 
 
@@ -2434,6 +2458,8 @@ static void checkSelfExp(
     Entry *tmpEntry = lookupClass(fileTable, globalTable, actClass->name);
     Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
     *returnType = *tmpType;
+    release(tmpType);
+    node->u.selfExp.expType = returnType;
 }
 
 
@@ -2452,7 +2478,8 @@ static void checkSuperExp(
     Entry *tmpEntry = lookupClass(fileTable, globalTable, actClass->superClass->name);
     Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
     *returnType = *tmpType;
-    free(tmpType);
+    release(tmpType);
+    node->u.superExp.expType = returnType;
 }
 
 
@@ -2472,6 +2499,8 @@ static void checkNewExp(
     Entry *tmpEntry = lookupClass(fileTable, globalTable, node->u.newExp.type);
     Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
     *returnType = *tmpType;
+    release(tmpType);
+    node->u.newExp.expType = returnType;
 }
 
 static void checkNewArrayExp(
@@ -2490,6 +2519,8 @@ static void checkNewArrayExp(
     Entry *tmpEntry = lookupClass(fileTable, globalTable, node->u.newArrayExp.type);
     Type *tmpType = newArrayType(tmpEntry->u.classEntry.class, node->u.newArrayExp.dims);
     *returnType = *tmpType;
+    release(tmpType);
+    node->u.newArrayExp.expType = returnType;
 }
 
 static void checkCallExp(
@@ -2503,16 +2534,17 @@ static void checkCallExp(
         Type *returnType,
         int pass) {
 
-    Entry *callExpMethodEntry = lookup(classTable, node->u.callExp.name, ENTRY_KIND_METHOD);
-    Type *callExpType = callExpMethodEntry->u.methodEntry.retType;
-
-    *returnType = *callExpType;
-
     /*
      * node->u.callExp.args
      * node->u.callExp.name
      * node->u.callExp.rcvr
      */
+
+    Entry *callExpMethodEntry = lookup(classTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+    Type *callExpType = callExpMethodEntry->u.methodEntry.retType;
+
+    *returnType = *callExpType;
+    node->u.callExp.expType = returnType;
 }
 
 static void checkAsmStm(
@@ -2532,27 +2564,16 @@ static void checkAsmStm(
 Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
     /* initialize tables and foobars */
     Table *globalTable;
-    Table *fileTable;
-    Table *classTable;
     Table **fileTables;
-    Class *objectClass;
-    Class *objectMetaClass;
-    Class *integerClass;
-    Class *integerMetaClass;
     Class *booleanClass;
     Class *booleanMetaClass;
     Class *characterClass;
     Class *characterMetaClass;
-    Entry *objectEntry;
-    Entry *objectMetaEntry;
-    Entry *integerEntry;
-    Entry *integerMetaEntry;
     Entry *booleanEntry;
     Entry *booleanMetaEntry;
     Entry *characterEntry;
     Entry *characterMetaEntry;
     Entry *mainClassEntry;
-    Entry *mainClassMetaEntry;
     Entry *mainMethodEntry;
 
     Type *returnType = allocate(sizeof(Type));
