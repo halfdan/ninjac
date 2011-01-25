@@ -373,6 +373,36 @@ static void generateCodeCallExp(Absyn *node, Table *table, Entry *currentMethod,
     generateCodeNode(node->u.callExp.args, table, currentMethod, returnLabel, breakLabel);
 }
 
+static void generateCodeNewExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+
+    int numFields;
+    int offset;
+    Class *class;
+    Type *type;
+    Entry *entry;
+
+    /* Fetch type and number of fields*/
+    type = node->u.newExp.expType;
+    numFields = type->u.simpleType.class->numFields;
+
+    /* new Object with numFields fields */
+    fprintf(asmFile, "\tnew %d\n", numFields);
+    fprintf(asmFile, "\t.addr %s_%lx\n", class->name->string, djb2(class->fileName));
+
+    /* Look for a method with the same name of the class in the metaclass => constructor */
+    entry = lookupMember(class->metaClass, class->name, ENTRY_KIND_METHOD);
+    
+    /* Did we find a constructor? */
+    if(entry != NULL) {
+        /* Generate code for arguments */
+        generateCodeNode(node->u.newExp.args, table, currentMethod, returnLabel, breakLabel);
+        offset = findVMT(class->metaClass->vmt, class->name);
+        /* ToDo */
+        fprintf(asmFile, "\tvmcall\t%d,%d", 0, offset);
+    }
+}
+
 static void generateCodeNewArrayExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
@@ -382,6 +412,52 @@ static void generateCodeNewArrayExp(Absyn *node, Table *table, Entry *currentMet
 
     fprintf(asmFile, "\tnewa\n");
     fprintf(asmFile, "\t.addr %s_%lx", node->u.newArrayExp.type->string, djb2(classEntry->u.classEntry.class->fileName));
+}
+
+
+static void generateCodeIntExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+
+    Entry *integerEntry;
+    Class *integerClass;
+
+    integerEntry = lookup(table, newSym("Integer"), ENTRY_KIND_CLASS);
+    integerClass = integerEntry->u.classEntry.class;
+
+    /* Generate new Integer object and duplicate it */
+    fprintf(asmFile, "\tnew\t%d\n", 2);
+    fprintf(asmFile, "\t.addr\t%s_%lx", integerClass->name->string, djb2(integerClass->fileName));
+    fprintf(asmFile, "\tdup\n");
+
+    /* Push the value of the intExp */
+    fprintf(asmFile, "\tpushc\t%d\n", node->u.intExp.value);
+
+    /* put the value on the stack into the first field */
+    fprintf(asmFile, "\tputf\t%d\n", 1);
+}
+
+static void generateCodeInstofExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+
+    Type *type;
+
+    /* Generate code for the left side expression (e.g. exp instanceof Type) */
+    generateCodeNode(node->u.instofExp.exp, table, currentMethod, returnLabel, breakLabel);
+
+    type = node->u.instofExp.expType;
+    /* ToDO */
+    /* fprintf(asmFile, "\tpushg\t%d\n", <position of type->metaclass>)); */
+    switch(type->kind) {
+        case TYPE_KIND_SIMPLE:
+
+            break;
+        case TYPE_KIND_ARRAY:
+            break;
+        default:
+            error("Wrong kind in generateCodeInstofExp!");
+            break;
+    }
+    fprintf(asmFile, "\tinstof\n");
 }
 
 static void generateProlog(Table* table) {
@@ -475,12 +551,14 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
         case ABSYN_UNOPEXP: /* 21 */
             break;
         case ABSYN_INSTOFEXP: /* 22 */
+            generateCodeInstofExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_CASTEXP: /* 23 */
             break;
         case ABSYN_NILEXP: /* 24 */
             break;
         case ABSYN_INTEXP: /* 25 */
+            generateCodeIntExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_BOOLEXP: /* 26 */
             break;
@@ -499,6 +577,7 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
             generateCodeCallExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_NEWEXP: /* 33 */
+            generateCodeNewExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_NEWARRAYEXP: /* 34 */
             generateCodeNewArrayExp(node, table, currentMethod, returnLabel, breakLabel);

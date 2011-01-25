@@ -4,7 +4,7 @@ public class Integer extends Object {
 	public static Integer add(Integer op) {
 	        asm {%
 	                // return Obj
-	                new 1
+	                new 2
 	                .addr Integer
 	                dup
 
@@ -16,7 +16,7 @@ public class Integer extends Object {
         	        add
 
 	                // return new IntegerObj
-	                putf 0
+	                putf 1
                 	popr
         	%}
 	}
@@ -24,7 +24,7 @@ public class Integer extends Object {
 	public static Integer sub(Integer op) {
 	        asm {%
 	                // return Obj
-	                new 1
+	                new 2
 	                .addr Integer
 	                dup
 
@@ -36,7 +36,7 @@ public class Integer extends Object {
         	        sub
 
 	                // return new IntegerObj
-	                putf 0
+	                putf 1
                 	popr
         	%}
 	}
@@ -44,7 +44,7 @@ public class Integer extends Object {
 	public static Integer mul(Integer op) {
 	        asm {%
 	                // return Obj
-	                new 1
+	                new 2
 	                .addr Integer
 	                dup
 
@@ -56,7 +56,7 @@ public class Integer extends Object {
         	        mul
 
 	                // return new IntegerObj
-	                putf 0
+	                putf 1
                 	popr
         	%}
 	}
@@ -64,7 +64,7 @@ public class Integer extends Object {
 	public static Integer div(Integer op) {
 	        asm {%
 	                // return Obj
-	                new 1
+	                new 2
 	                .addr Integer
 	                dup
 
@@ -76,7 +76,7 @@ public class Integer extends Object {
         	        div
 
 	                // return new IntegerObj
-	                putf 0
+	                putf 1
                 	popr
         	%}
 	}
@@ -84,7 +84,7 @@ public class Integer extends Object {
 	public static Integer mod(Integer op) {
 	        asm {%
 	                // return Obj
-	                new 1
+	                new 2
 	                .addr Integer
 	                dup
 
@@ -96,7 +96,7 @@ public class Integer extends Object {
         	        mod
 
 	                // return new IntegerObj
-	                putf 0
+	                putf 1
                 	popr
         	%}
 	}
