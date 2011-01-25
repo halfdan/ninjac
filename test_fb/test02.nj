@@ -1,0 +1,11 @@
+public class Main extends Object {
+	public static void main() {
+		Life.getAnswer();
+	}
+}
+
+class Life extends Object {
+	public static Integer getAnswer() {
+		return 42;
+	}
+}
