@@ -581,8 +581,6 @@ static void generateCodeInstofExp(Absyn *node, Table *table, Entry *currentMetho
 
 static void generateProlog(Table* table) {
     Entry* mainClass = lookup(table, newSym("$Main"), ENTRY_KIND_CLASS);
-    ClassList* currentClassList;
-    Class* currentClass;
 
     /* execution framework */
     fprintf(asmFile, "//\n");
@@ -602,6 +600,11 @@ static void generateProlog(Table* table) {
     fprintf(asmFile, "\thalt\n");
     fprintf(asmFile, "\trsf\n");
     fprintf(asmFile, "\tret\n");
+}
+
+static void generateCodeMetaClasses(void) {
+    ClassList* currentClassList;
+    Class* currentClass;
 
     /* Generate init */
     fprintf(asmFile, "_init:\n");
@@ -770,10 +773,12 @@ void generateCode(Absyn *fileTrees[], int numInFiles, Table **fileTables, FILE *
 
     metaClasses = emptyClassList();
 
+    /* fileTables[0]->outerScope is the global table! */
+    generateProlog(fileTables[0]->outerScope);
+
     for (i = 0; i < numInFiles; i++) {
         generateCodeNode(fileTrees[i], fileTables[i], NULL, -1, -1);
     }
 
-    /* fileTables[0]->outerScope is the global table! */
-    generateProlog(fileTables[0]->outerScope);
+    generateCodeMetaClasses();
 }
