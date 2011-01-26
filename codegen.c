@@ -588,6 +588,19 @@ static void generateCodeInstofExp(Absyn *node, Table *table, Entry *currentMetho
     fprintf(asmFile, "\tinstof\n");
 }
 
+static void generateCodeExpList(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+
+    Absyn *expList;
+
+    expList = node;
+
+    while(!expList->u.expList.isEmpty) {
+        generateCodeNode(expList->u.expList.head, table, currentMethod, returnLabel, breakLabel);
+        expList = expList->u.expList.tail;
+    }
+}
+
 static void generateProlog(Table* table) {
     Entry* mainClass = lookup(table, newSym("$Main"), ENTRY_KIND_CLASS);
 
@@ -752,6 +765,7 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
             generateCodeStmsList(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_EXPLIST: /* 43 */
+            generateCodeExpList(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_ASMSTM: /* 44 */
             generateCodeAsmStmt(node, table, currentMethod, returnLabel, breakLabel);
