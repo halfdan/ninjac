@@ -257,7 +257,7 @@ static void generateCodeAssignStmt(Absyn *node, Table *table, Entry *currentMeth
 
     if (entry != NULL) {
         generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
-        fprintf(asmFile, "\tpushl\t%d\n", entry->u.variableEntry.offset);
+        fprintf(asmFile, "\tpopl\t%d\n", entry->u.variableEntry.offset);
     }
 /*    Absyn *varVar = var->u.varExp.var;*/
 /*    Type *varType = var->u.varExp.expType;*/
@@ -389,15 +389,15 @@ static void generateCodeCallStmt(Absyn *node, Table *table, Entry *currentMethod
         methodEntry = lookupMember(rcvrClass, name, ENTRY_KIND_METHOD);
         offset = findVMT(rcvrMetaClass->vmt, name);
         numParams = methodEntry->u.methodEntry.numParams;
+
+        generateCodeNode(args, table, currentMethod, returnLabel, breakLabel);
+
+        fprintf(asmFile, "\tvmcall\t%d,%d\n",
+                numParams,
+                offset + 1);
     } else {
         generateCodeNode(rcvr, table, currentMethod, returnLabel, breakLabel);
     }
-
-    generateCodeNode(args, table, currentMethod, returnLabel, breakLabel);
-
-    fprintf(asmFile, "\tvmcall\t%d,%d\n",
-            numParams + 1,
-            offset + 1);
 
     /* ToDo */
     
@@ -406,6 +406,15 @@ static void generateCodeCallStmt(Absyn *node, Table *table, Entry *currentMethod
 static void generateCodeSuperExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     shouldNotReach("SuperExp");
+}
+
+static void generateVarExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+    Sym *varName =getVarName(node);
+    Entry *varEntry = lookup(currentMethod->u.methodEntry.localTable, varName, ENTRY_KIND_VARIABLE);
+    if (varEntry != NULL) {
+        fprintf("\tpushl\t%d\n", varEntry->u.variableEntry.offset);
+    }
 }
 
 static void generateCodeCallExp(Absyn *node, Table *table, Entry *currentMethod,
@@ -712,6 +721,7 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
             generateCodeSuperExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_VAREXP: /* 31 */
+            generateVarExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_CALLEXP: /* 32 */
             generateCodeCallExp(node, table, currentMethod, returnLabel, breakLabel);

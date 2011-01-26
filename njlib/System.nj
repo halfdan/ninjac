@@ -3,7 +3,7 @@ public class System extends Object {
 	public static void writeInteger(Integer i) {
 		asm {%
 			pushl -3
-                        getf 0
+                        getf 1
 			wrint
 		%}
 	}
