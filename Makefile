@@ -18,6 +18,7 @@ DIRS = nja njvm disasm
 .PHONY:		all tests clean
 
 all:		$(BIN)
+		-for d in $(DIRS); do (cd $$d; $(MAKE) ); done
 
 $(BIN):		$(OBJS)
 		$(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS)
