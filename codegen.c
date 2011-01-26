@@ -393,7 +393,7 @@ static void generateCodeCallStmt(Absyn *node, Table *table, Entry *currentMethod
         generateCodeNode(args, table, currentMethod, returnLabel, breakLabel);
 
         fprintf(asmFile, "\tvmcall\t%d,%d\n",
-                numParams,
+                numParams + 1,
                 offset + 1);
     } else {
         generateCodeNode(rcvr, table, currentMethod, returnLabel, breakLabel);
@@ -413,7 +413,7 @@ static void generateVarExp(Absyn *node, Table *table, Entry *currentMethod,
     Sym *varName =getVarName(node);
     Entry *varEntry = lookup(currentMethod->u.methodEntry.localTable, varName, ENTRY_KIND_VARIABLE);
     if (varEntry != NULL) {
-        fprintf("\tpushl\t%d\n", varEntry->u.variableEntry.offset);
+        fprintf(asmFile, "\tpushl\t%d\n", varEntry->u.variableEntry.offset);
     }
 }
 
