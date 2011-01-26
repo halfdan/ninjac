@@ -354,6 +354,55 @@ static void generateCodeRetExpStmt(Absyn *node, Table *table, Entry *currentMeth
     fprintf(asmFile, "\tjmp\t_L%d\n", returnLabel);
 }
 
+
+static Type *getExpType(Absyn *expNode) {
+    switch(expNode->type) {
+        case ABSYN_VAREXP:
+            return expNode->u.varExp.expType;
+        default:
+            error("you found an invalid node in getExpType in types.c!");
+            break;
+    }
+}
+
+
+static void generateCodeCallStmt(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+    Absyn *rcvr = node->u.callStm.rcvr;
+    Absyn *args = node->u.callStm.args;
+    Sym *name = node->u.callStm.name;
+    Sym *rcvrName;
+    Type *rcvrType = getExpType(rcvr);
+    Class *rcvrClass;
+    Class *rcvrMetaClass;
+    Entry *rcvrEntry;
+    Entry *methodEntry;
+    int offset;
+    int numParams;
+
+    if (rcvrType->isStatic) {
+        rcvrName = getVarName(rcvr);
+        rcvrEntry = lookup(table, rcvrName, ENTRY_KIND_CLASS);
+        rcvrClass = rcvrEntry->u.classEntry.class;
+        rcvrMetaClass = rcvrClass->metaClass;
+        fprintf(asmFile, "\tpushg\t%d\n", rcvrMetaClass->globalIndex);
+        methodEntry = lookupMember(rcvrClass, name, ENTRY_KIND_METHOD);
+        offset = findVMT(rcvrMetaClass->vmt, name);
+        numParams = methodEntry->u.methodEntry.numParams;
+    } else {
+        generateCodeNode(rcvr, table, currentMethod, returnLabel, breakLabel);
+    }
+
+    generateCodeNode(args, table, currentMethod, returnLabel, breakLabel);
+
+    fprintf(asmFile, "\tvmcall\t%d,%d\n",
+            numParams + 1,
+            offset + 1);
+
+    /* ToDo */
+    
+}
+
 static void generateCodeSuperExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     shouldNotReach("SuperExp");
@@ -631,6 +680,7 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
             generateCodeRetExpStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_CALLSTM: /* 19 */
+            generateCodeCallStmt(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_BINOPEXP: /* 20 */
             break;

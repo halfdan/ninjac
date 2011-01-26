@@ -952,7 +952,7 @@ static void checkMethodDec(
                 /* set the offset for the params to -2 */
                 paramOffset = -2;
                 /* Loop over all params in the list */
-                for(numParams = 1, paramDec = paramList->u.parList.head;
+                for(numParams = 0, paramDec = paramList->u.parList.head;
                         paramList->u.parList.isEmpty == FALSE;
                         numParams++,
                         paramList = paramList->u.clsList.tail,
@@ -975,7 +975,7 @@ static void checkMethodDec(
             localOffset = 0;
             if (!localList->u.varList.isEmpty) {
                 /* Loop over all local variables in the list */
-                for(i = 0, numLocals = 1, localDec = localList->u.varList.head;
+                for(i = 0, numLocals = 0, localDec = localList->u.varList.head;
                         localList->u.varList.isEmpty == FALSE;
                         i++, numLocals++,
                         localList = localList->u.varList.tail,
@@ -2092,6 +2092,7 @@ static void checkBinOpExp(
 
     Type *leftType  = allocate(sizeof(Type));
     Type *rightType = allocate(sizeof(Type));
+    Type *tmpType   = allocate(sizeof(Type));
 
     /* determine type of left */
     checkNode(left, fileTable, localTable, actClass, classTable,
@@ -2132,6 +2133,7 @@ static void checkBinOpExp(
             }
 
             *returnType = *booleanType;
+            *tmpType = *booleanType;
 
             break;
         case ABSYN_BINOP_EQ:
@@ -2186,6 +2188,7 @@ static void checkBinOpExp(
             }
 
             *returnType = *booleanType;
+            *tmpType = *booleanType;
 
             break;
         case ABSYN_BINOP_ADD:
@@ -2220,6 +2223,7 @@ static void checkBinOpExp(
             }
 
             *returnType = *integerType;
+            *tmpType = *integerType;
 
             break;
         default:
@@ -2227,7 +2231,7 @@ static void checkBinOpExp(
             break;
     }
 
-    node->u.binopExp.expType = returnType;
+    node->u.binopExp.expType = tmpType;
     free(leftType);
     free(rightType);
 }
@@ -2252,6 +2256,7 @@ static void checkUnOpExp(
     Absyn *right = node->u.unopExp.right;
 
     Type *rightType = allocate(sizeof(Type));
+    Type *tmpType = allocate(sizeof(Type));
 
     switch(op) {
         case ABSYN_UNOP_LNOT:
@@ -2273,6 +2278,7 @@ static void checkUnOpExp(
             }
 
             *returnType = *booleanType;
+            *tmpType = *booleanType;
             break;
         case ABSYN_UNOP_MINUS:
         case ABSYN_UNOP_PLUS:
@@ -2294,6 +2300,7 @@ static void checkUnOpExp(
             }
 
             *returnType = *integerType;
+            *tmpType = *integerType;
             break;
         default:
             error("You found an unexspected UnOp: %d", op);
@@ -2303,7 +2310,7 @@ static void checkUnOpExp(
     free(integerType);
     free(booleanType);
     free(rightType);
-    node->u.unopExp.expType = returnType;
+    node->u.unopExp.expType = tmpType;
 }
 
 static void checkInstanceOfExp(
@@ -2340,8 +2347,7 @@ static void checkInstanceOfExp(
     }
 
     *returnType = *booleanType;
-    free(booleanType);
-    node->u.instofExp.expType = returnType;
+    node->u.instofExp.expType = booleanType;
 }
 
 
@@ -2377,8 +2383,7 @@ static void checkCastExp(
 
     *returnType = *typeType;
     release(expType);
-    release(typeType);
-    node->u.castExp.expType = returnType;
+    node->u.castExp.expType = typeType;
 }
 
 
@@ -2395,8 +2400,7 @@ static void checkNilExp(
     
     Type *nilType = newNilType();
     *returnType = *nilType;
-    release(nilType);
-    node->u.nilExp.expType = returnType;
+    node->u.nilExp.expType = nilType;
 }
 
 
@@ -2413,8 +2417,7 @@ static void checkIntExp(
     Entry *integerEntry = lookupClass(fileTable, globalTable, newSym("Integer"));
     Type *integerType = newSimpleType(integerEntry->u.classEntry.class);
     *returnType = *integerType;
-    release(integerType);
-    node->u.intExp.expType = returnType;
+    node->u.intExp.expType = integerType;
 }
 
 
@@ -2431,8 +2434,7 @@ static void checkBoolExp(
     Entry *booleanEntry = lookupClass(fileTable, globalTable, newSym("Boolean"));
     Type *booleanType = newSimpleType(booleanEntry->u.classEntry.class);
     *returnType = *booleanType;
-    release(booleanType);
-    node->u.boolExp.expType = returnType;
+    node->u.boolExp.expType = booleanType;
 }
 
 
@@ -2449,8 +2451,7 @@ static void checkCharExp(
     Entry *characterEntry = lookupClass(fileTable, globalTable, newSym("Character"));
     Type *characterType = newSimpleType(characterEntry->u.classEntry.class);
     *returnType = *characterType;
-    release(characterType);
-    node->u.charExp.expType = returnType;
+    node->u.charExp.expType = characterType;
 }
 
 
@@ -2469,8 +2470,7 @@ static void checkSelfExp(
     Entry *tmpEntry = lookupClass(fileTable, globalTable, actClass->name);
     Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
     *returnType = *tmpType;
-    release(tmpType);
-    node->u.selfExp.expType = returnType;
+    node->u.selfExp.expType = tmpType;
 }
 
 
@@ -2489,8 +2489,7 @@ static void checkSuperExp(
     Entry *tmpEntry = lookupClass(fileTable, globalTable, actClass->superClass->name);
     Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
     *returnType = *tmpType;
-    release(tmpType);
-    node->u.superExp.expType = returnType;
+    node->u.superExp.expType = tmpType;
 }
 
 
@@ -2510,8 +2509,7 @@ static void checkNewExp(
     Entry *tmpEntry = lookupClass(fileTable, globalTable, node->u.newExp.type);
     Type *tmpType = newSimpleType(tmpEntry->u.classEntry.class);
     *returnType = *tmpType;
-    release(tmpType);
-    node->u.newExp.expType = returnType;
+    node->u.newExp.expType = tmpType;
 }
 
 static void checkNewArrayExp(
@@ -2530,8 +2528,7 @@ static void checkNewArrayExp(
     Entry *tmpEntry = lookupClass(fileTable, globalTable, node->u.newArrayExp.type);
     Type *tmpType = newArrayType(tmpEntry->u.classEntry.class, node->u.newArrayExp.dims);
     *returnType = *tmpType;
-    release(tmpType);
-    node->u.newArrayExp.expType = returnType;
+    node->u.newArrayExp.expType = tmpType;
 }
 
 static void checkCallExp(
@@ -2555,7 +2552,7 @@ static void checkCallExp(
     Type *callExpType = callExpMethodEntry->u.methodEntry.retType;
 
     *returnType = *callExpType;
-    node->u.callExp.expType = returnType;
+    node->u.callExp.expType = callExpType;
 }
 
 static void checkAsmStm(
@@ -2645,8 +2642,6 @@ Table **check(Absyn *fileTrees[], int numInFiles, boolean showSymbolTables) {
          checkNode(fileTrees[i], &(fileTables[i]), NULL, NULL, NULL,
                 globalTable, FALSE, returnType, 4);
     }
-
-    /* sixth pass: generate offsets for instance variables */
 
     if (showSymbolTables) {
         printf("## Global Symboltable ##\n");
