@@ -285,3 +285,25 @@ int getLength(TypeList* List) {
 
     return i;
 }
+
+ClassList *newClassList(ClassList* classList, Class* class1) {
+    ClassList *newClassList;
+
+    newClassList = (ClassList *) allocate(sizeof(ClassList));
+    newClassList->head = class1;
+    newClassList->isEmpty = FALSE;
+    newClassList->tail = classList;
+
+    return newClassList;
+}
+
+ClassList *emptyClassList(void) {
+    ClassList *newClassList;
+
+    newClassList = (ClassList *) allocate(sizeof(ClassList));
+    newClassList->isEmpty = TRUE;
+    newClassList->head = NULL;
+    newClassList->tail = NULL;
+
+    return newClassList;
+}

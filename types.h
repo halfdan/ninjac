@@ -21,9 +21,18 @@ typedef struct class {
   int globalIndex;              /* index for meta classes */
 } Class;
 
+typedef struct classList {
+  boolean isEmpty;            /* Last element */
+  Class *head;
+  struct classList *tail;
+} ClassList;
+
 
 Class *newClass(boolean isPublic, Sym *name, char *fileName,
                 Class *superClass, Class *metaClass, struct table *mbrTable);
+
+ClassList *newClassList(ClassList *classList, Class *class1);
+ClassList *emptyClassList(void);
 
 boolean isSameOrSubclassOf(Class *class1, Class *class2);
 void showClass(Class *class, int pos);

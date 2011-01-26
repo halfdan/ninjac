@@ -13,6 +13,7 @@
 #include "codegen.h"
 
 static FILE *asmFile;
+static ClassList *metaClasses;
 
 /* Function decs */
 static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel);
@@ -83,6 +84,9 @@ static void generateCodeClassDec(Absyn *node, Table *table, Entry *currentMethod
     Entry *classEntry = lookupClass(&table, (table)->outerScope, node->u.classDec.name);
     class = classEntry->u.classEntry.class;
     metaClass = class->metaClass;
+
+    /* Add meta class to the list of meta classes for _prolog generation */
+    metaClasses = newClassList(metaClasses, metaClass);
 
     fprintf(asmFile, "// Metaclass \"%s\"\n", metaClass->name->string);
     fprintf(asmFile, "%s_%lx:\n", metaClass->name->string, djb2(node->file));
@@ -385,9 +389,10 @@ static void generateCodeNewExp(Absyn *node, Table *table, Entry *currentMethod,
     /* Fetch type and number of fields*/
     type = node->u.newExp.expType;
     numFields = type->u.simpleType.class->numFields;
+    class = type->u.simpleType.class;
 
     /* new Object with numFields fields */
-    fprintf(asmFile, "\tnew %d\n", numFields);
+    fprintf(asmFile, "\tnew\t%d\n", numFields);
     fprintf(asmFile, "\t.addr %s_%lx\n", class->name->string, djb2(class->fileName));
 
     /* Look for a method with the same name of the class in the metaclass => constructor */
@@ -398,8 +403,8 @@ static void generateCodeNewExp(Absyn *node, Table *table, Entry *currentMethod,
         /* Generate code for arguments */
         generateCodeNode(node->u.newExp.args, table, currentMethod, returnLabel, breakLabel);
         offset = findVMT(class->metaClass->vmt, class->name);
-        /* ToDo */
-        fprintf(asmFile, "\tvmcall\t%d,%d\n", 0, offset);
+        fprintf(asmFile, "\tpushg\t%d\n", class->metaClass->globalIndex);
+        fprintf(asmFile, "\tvmcall\t%d,%d\n", entry->u.methodEntry.numParams, offset);
     }
 }
 
@@ -527,12 +532,15 @@ static void generateCodeInstofExp(Absyn *node, Table *table, Entry *currentMetho
 
 static void generateProlog(Table* table) {
     Entry* mainClass = lookup(table, newSym("$Main"), ENTRY_KIND_CLASS);
+    ClassList* currentClassList;
+    Class* currentClass;
 
     /* execution framework */
     fprintf(asmFile, "//\n");
     fprintf(asmFile, "// execution framework\n");
     fprintf(asmFile, "//\n");
     fprintf(asmFile, "_start:\n");
+    fprintf(asmFile, "\tcall\t_init\n");
     fprintf(asmFile, "\tcall\t$Main_main_%lx\n", djb2(mainClass->u.classEntry.class->fileName));
     fprintf(asmFile, "\tcall\t_exit\n");
     /* void exit() */
@@ -544,6 +552,19 @@ static void generateProlog(Table* table) {
     fprintf(asmFile, "\tasf\t0\n");
     fprintf(asmFile, "\thalt\n");
     fprintf(asmFile, "\trsf\n");
+    fprintf(asmFile, "\tret\n");
+
+    /* Generate init */
+    fprintf(asmFile, "_init:\n");
+    currentClassList = metaClasses;
+    while(!currentClassList->isEmpty) {
+        currentClass = currentClassList->head;
+        fprintf(asmFile, "\t// Generate Metaclass object \"%s\"\n", currentClass->name->string);
+        fprintf(asmFile, "\tnew\t%d\n", currentClass->numFields);
+        fprintf(asmFile, "\t.addr\t%s_%lx\n", currentClass->name->string, djb2(currentClass->fileName));
+        fprintf(asmFile, "\tpopg\t%d\n", currentClass->globalIndex);
+        currentClassList = currentClassList->tail;
+    }
     fprintf(asmFile, "\tret\n");
 }
 
@@ -614,6 +635,7 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
         case ABSYN_BINOPEXP: /* 20 */
             break;
         case ABSYN_UNOPEXP: /* 21 */
+            generateCodeUnopExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_INSTOFEXP: /* 22 */
             generateCodeInstofExp(node, table, currentMethod, returnLabel, breakLabel);
@@ -696,10 +718,12 @@ void generateCode(Absyn *fileTrees[], int numInFiles, Table **fileTables, FILE *
     int i;
     asmFile = outFile;
 
-    /* fileTables[0]->outerScope is the global table! */
-    generateProlog(fileTables[0]->outerScope);
+    metaClasses = emptyClassList();
 
     for (i = 0; i < numInFiles; i++) {
         generateCodeNode(fileTrees[i], fileTables[i], NULL, -1, -1);
     }
+
+    /* fileTables[0]->outerScope is the global table! */
+    generateProlog(fileTables[0]->outerScope);
 }
