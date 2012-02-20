@@ -238,7 +238,12 @@ static Sym *getVarName(Absyn *varNode) {
                 varNode = varNode->u.varExp.var;
                 break;
             }
+            case ABSYN_MEMBERVAR: {
+                return varNode->u.memberVar.name;
+		break;
+            }
             default: {
+		printf("Error Type %d\n", varNode->type);
                 shouldNotReach("getVarName got some unknown Var-Type");
             }
         }
