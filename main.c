@@ -37,6 +37,7 @@ static void help(char *myself) {
   printf("Options:\n");
   printf("  --output <file>     specify output file\n");
   printf("  --mainclass <class> specify main class\n");
+  printf("  --njlib <dir>       specify location of library\n");
   printf("  --tokens            show stream of tokens (no parsing)\n");
   printf("  --absyn             show abstract syntax\n");
   printf("  --tables            show symbol tables\n");
@@ -50,6 +51,7 @@ int main(int argc, char *argv[]) {
   char *inFileName[MAX_INFILES];
   int numInFiles;
   char *outFileName;
+  char *ninjaLibrary;
   boolean optionTokens;
   boolean optionAbsyn;
   boolean optionTables;
@@ -79,6 +81,13 @@ int main(int argc, char *argv[]) {
           error("main class missing or invalid");
         }
         mainClass = argv[i];
+      } else
+      if (strcmp(argv[i], "--njlib") == 0) {
+        i++;
+        if (argv[i][0] == '-' || i == argc) {
+          error("Ninja library missing or invalid");
+        }
+        ninjaLibrary = argv[i];
       } else
       if (strcmp(argv[i], "--tokens") == 0) {
         optionTokens = TRUE;
