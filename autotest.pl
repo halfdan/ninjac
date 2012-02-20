@@ -50,7 +50,7 @@ sub Autotest_Main() {
 	STDERR->fdopen(\*TMPOUT, 'w') or die("$!");
 
         # compile testfile
-        system("./njc $testfile");
+        system("./njc $testfile njlib/Object.nj njlib/Integer.nj njlib/Boolean.nj njlib/System.nj");
 
         # restore STDOUT
         STDERR->fdopen(\*$oldout, 'w') or die("$!");
