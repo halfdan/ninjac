@@ -1,7 +1,7 @@
 public class Integer extends Object {
 	Integer obj;
 
-	public static Integer add(Integer op) {
+	public Integer add(Integer op) {
 	        asm {%
 	                // return Obj
 	                new 2
@@ -21,7 +21,7 @@ public class Integer extends Object {
         	%}
 	}
 
-	public static Integer sub(Integer op) {
+	public Integer sub(Integer op) {
 	        asm {%
 	                // return Obj
 	                new 2
@@ -41,7 +41,7 @@ public class Integer extends Object {
         	%}
 	}
 
-	public static Integer mul(Integer op) {
+	public Integer mul(Integer op) {
 	        asm {%
 	                // return Obj
 	                new 2
@@ -61,7 +61,7 @@ public class Integer extends Object {
         	%}
 	}
 
-	public static Integer div(Integer op) {
+	public Integer div(Integer op) {
 	        asm {%
 	                // return Obj
 	                new 2
@@ -81,7 +81,7 @@ public class Integer extends Object {
         	%}
 	}
 
-	public static Integer mod(Integer op) {
+	public Integer mod(Integer op) {
 	        asm {%
 	                // return Obj
 	                new 2

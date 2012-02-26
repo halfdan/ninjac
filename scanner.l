@@ -11,6 +11,7 @@
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
+#include "types.h"
 #include "absyn.h"
 #include "scanner.h"
 #include "parser.tab.h"

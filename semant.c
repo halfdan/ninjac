@@ -4,7 +4,6 @@
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
-#include "absyn.h"
 #include "vmt.h"
 #include "types.h"
 #include "instance.h"
@@ -1603,6 +1602,8 @@ static void checkMemberVar(
     Type *objectType = allocate(sizeof(Type));
     Type *actClassType;
 
+    /* We need to save the class for codegen */
+    node->u.memberVar.objectClass = actClass;
 
     /* determine type of object */
     checkNode(object, fileTable,localTable, actClass, classTable,
@@ -2547,11 +2548,26 @@ static void checkCallExp(
      * node->u.callExp.name
      * node->u.callExp.rcvr
      */
-
-    Entry *callExpMethodEntry = lookup(classTable, node->u.callExp.name, ENTRY_KIND_METHOD);
-    Type *callExpType = callExpMethodEntry->u.methodEntry.retType;
+    
+    Type *retType;
+    Class *rcvrClass;
+    Entry *callExpMethodEntry;
+    Type *callExpType;
+    retType = allocate(sizeof(Type));
+    
+    checkNode(node->u.callExp.rcvr, fileTable, localTable, actClass, classTable,
+       globalTable, breakAllowed, retType, pass);
+    rcvrClass = retType->u.simpleType.class;
+    node->u.callExp.rcvrClass = rcvrClass;
+    callExpMethodEntry = lookup(rcvrClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+    if(callExpMethodEntry == NULL) {
+        error("Method '%s' has vanished from Table", node->u.callExp.name->string);
+    }
+    callExpType = callExpMethodEntry->u.methodEntry.retType;
 
     *returnType = *callExpType;
+    
+    release(retType);
     node->u.callExp.expType = callExpType;
 }
 

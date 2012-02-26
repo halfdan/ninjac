@@ -252,6 +252,7 @@ typedef struct absyn {
       struct absyn *rcvr;	/* receiver expression */
       struct absyn *args;	/* argument expressions */
       struct type *expType;     /* type of expression */
+      Class *rcvrClass;         /* Class of rcvr */
     } callExp;
     struct {
       Sym *type;		/* class name */
@@ -274,6 +275,7 @@ typedef struct absyn {
     struct {
       Sym *name;		/* the member variable's name */
       struct absyn *object;	/* the object of which it is a member */
+      Class *objectClass;	/* the class of the member variable */
     } memberVar;
     struct {
       boolean isEmpty;		/* true: last element, head/tail unused */

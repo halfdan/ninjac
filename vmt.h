@@ -9,7 +9,7 @@
 #define	VMT_H
 
 typedef struct vmt {
-    boolean isEmpty;        /* determines wether the end of vmt is reached or not */
+    boolean isEmpty;        /* determines whether the end of vmt is reached or not */
     struct vmt *next;       /* pointer to next VMT */
     struct sym *name;       /* pointer to method name symbol */
     char *className;

@@ -11,6 +11,7 @@
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
+#include "types.h"
 #include "absyn.h"
 #include "scanner.h"
 #include "parser.h"
@@ -18,7 +19,6 @@
 Absyn *fileTree;
 int arrayDims = 1;
 
-static Absyn *p;
 
 %}
 

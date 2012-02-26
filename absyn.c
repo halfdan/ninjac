@@ -10,6 +10,7 @@
 #include "common.h"
 #include "utils.h"
 #include "sym.h"
+#include "types.h"
 #include "absyn.h"
 
 
