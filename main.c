@@ -66,6 +66,7 @@ int main(int argc, char *argv[]) {
   optionTokens = FALSE;
   optionAbsyn = FALSE;
   optionTables = FALSE;
+  ninjaLibrary = NULL;
   for (i = 1; i < argc; i++) {
     if (argv[i][0] == '-') {
       /* option */
@@ -120,6 +121,7 @@ int main(int argc, char *argv[]) {
   if (numInFiles == 0) {
     error("no input file");
   }
+
   /* scan & parse source */
   for (i = 0; i < numInFiles; i++) {
     printf("Compiling file '%s'...\n", inFileName[i]);
@@ -150,6 +152,13 @@ int main(int argc, char *argv[]) {
   /* do semantic analysis */
   fileTables = check(fileTrees, numInFiles, optionTables);
 
+  
+  if (optionAbsyn) {
+    for (i = 0; i < numInFiles; i++) {
+      printf("Abstract syntax for file AFTER SEMANT \"%s\":\n", inFileName[i]);
+      showAbsyn(fileTrees[i]);
+    }
+  }
   /* If there is a filename open it, else use STDOUT */
   if(NULL != outFileName)
       outFile = fopen(outFileName, "w");

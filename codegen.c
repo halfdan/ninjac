@@ -275,8 +275,12 @@ static void generateCodeAsmInstr2(Absyn *node, Table *table, Entry *currentMetho
 }
 
 static void generateCodeAsmInstr3(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
+    Entry *classEntry;
+    Class *class;
     if (strcmp(node->u.asmInstr3.instr, ".addr") == 0) {
-        fprintf(asmFile, "\t%s\t%s_%lx\n", node->u.asmInstr3.instr, node->u.asmInstr3.label, djb2(node->file));
+        classEntry = lookup(table, newSym(node->u.asmInstr3.label), ENTRY_KIND_CLASS);
+        class = classEntry->u.classEntry.class;
+        fprintf(asmFile, "\t%s\t%s_%lx\n", node->u.asmInstr3.instr, node->u.asmInstr3.label, djb2(class->fileName));
     } else {
         fprintf(asmFile, "\t%s\t%s\n", node->u.asmInstr3.instr, node->u.asmInstr3.label);
     }

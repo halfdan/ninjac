@@ -2090,6 +2090,7 @@ static void checkBinOpExp(
     int op = node->u.binopExp.op;
     Absyn *left  = node->u.binopExp.left;
     Absyn *right = node->u.binopExp.right;
+    Sym *methodName;
 
     Type *leftType  = allocate(sizeof(Type));
     Type *rightType = allocate(sizeof(Type));
@@ -2222,7 +2223,27 @@ static void checkBinOpExp(
                         node->file,
                         node->line);
             }
-
+                        
+            switch(op) {
+                case ABSYN_BINOP_ADD:
+                    methodName = newSym("add");
+                    break;
+                case ABSYN_BINOP_SUB:
+                    methodName = newSym("sub");
+                    break;
+                case ABSYN_BINOP_MUL:
+                    methodName = newSym("mul");
+                    break;
+                case ABSYN_BINOP_DIV:
+                    methodName = newSym("div");
+                    break;
+                case ABSYN_BINOP_MOD:
+                    methodName = newSym("mod");
+                    break;
+            }
+            
+            node = newCallExp(node->file, node->line, methodName, left, newExpList(right, emptyExpList()));
+            node->u.callExp.rcvrClass = leftType->u.simpleType.class;
             *returnType = *integerType;
             *tmpType = *integerType;
 
@@ -2232,7 +2253,7 @@ static void checkBinOpExp(
             break;
     }
 
-    node->u.binopExp.expType = tmpType;
+    node->u.callExp.expType = tmpType;
     free(leftType);
     free(rightType);
 }
