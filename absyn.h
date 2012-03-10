@@ -193,6 +193,7 @@ typedef struct absyn {
       Sym *name;		/* method name */
       struct absyn *rcvr;	/* receiver expression */
       struct absyn *args;	/* argument expressions */
+      Class *rcvrClass;         /* Class of rcvr */
     } callStm;
     struct {
       int op;			/* operation */

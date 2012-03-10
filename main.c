@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 
   /* scan & parse source */
   for (i = 0; i < numInFiles; i++) {
-    printf("Compiling file '%s'...\n", inFileName[i]);
+/*    printf("Compiling file '%s'...\n", inFileName[i]); */
     if (!yyInit(inFileName[i])) {
       error("cannot open input file '%s'", inFileName[i]);
     }

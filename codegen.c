@@ -457,23 +457,19 @@ static void generateCodeCallStmt(Absyn *node, Table *table, Entry *currentMethod
     Absyn *rcvr = node->u.callStm.rcvr;
     Absyn *args = node->u.callStm.args;
     Sym *name = node->u.callStm.name;
-    Sym *rcvrName;
     Type *rcvrType = getExpType(rcvr);
-    Class *rcvrClass;
-    Class *rcvrMetaClass;
-    Entry *rcvrEntry;
+    Class *rcvrClass = node->u.callStm.rcvrClass;
     Entry *methodEntry;
     int offset;
     int numParams;
-
-    if (rcvrType->isStatic) {
-        rcvrName = getVarName(rcvr);
-        rcvrEntry = lookup(table, rcvrName, ENTRY_KIND_CLASS);
-        rcvrClass = rcvrEntry->u.classEntry.class;
-        rcvrMetaClass = rcvrClass->metaClass;
-        fprintf(asmFile, "\tpushg\t%d\n", rcvrMetaClass->globalIndex);
-        methodEntry = lookupMember(rcvrClass, name, ENTRY_KIND_METHOD);
-        offset = findVMT(rcvrMetaClass->vmt, name);
+    
+    methodEntry = lookupMember(rcvrClass, name, ENTRY_KIND_METHOD);
+    
+    if (methodEntry->u.methodEntry.isStatic) {
+        /* rcvrClass == rcvrMetaclass */
+        fprintf(asmFile, "\tpushg\t%d\n", rcvrClass->globalIndex);
+        
+        offset = findVMT(rcvrClass->vmt, name);
         numParams = methodEntry->u.methodEntry.numParams;
 
         generateCodeNode(args, table, currentMethod, returnLabel, breakLabel);
@@ -520,6 +516,9 @@ static void generateCodeCallExp(Absyn *node, Table *table, Entry *currentMethod,
             break;
     }
     methodEntry = lookup(node->u.callExp.rcvrClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+    if(methodEntry == NULL) {
+        methodEntry = lookup(node->u.callExp.rcvrClass->metaClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+    }
     
     generateCodeNode(node->u.callExp.args, table, currentMethod, returnLabel, breakLabel);
     offset = findVMT(node->u.callExp.rcvrClass->vmt, node->u.callExp.name);

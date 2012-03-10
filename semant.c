@@ -1005,7 +1005,7 @@ static void checkMethodDec(
                             actClass->name->string,
                             node->file,
                             node->line);
-                }
+                }                
             } else {
 
                 if(NULL == enter(classTable, node->u.methodDec.name, methodEntry)) {
@@ -1100,8 +1100,8 @@ static void checkMethodDec(
                     }
                 }
             }
-
-            /* Does the file contain any statements? */
+            
+            /* Does the method contain any statements? */
             stmtList = node->u.methodDec.stms;
             if (!stmtList->u.stmList.isEmpty) {
                 /* Loop over all statements in the list */
@@ -1110,7 +1110,12 @@ static void checkMethodDec(
                         stmtList = stmtList->u.stmList.tail,
                         stmtDec = stmtList->u.stmList.head) {
                     /* Check the statement declaration */
-                    checkNode(stmtDec, fileTable, methodEntry->u.methodEntry.localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                    if(methodEntry->u.methodEntry.isStatic) {
+                        checkNode(stmtDec, fileTable, methodEntry->u.methodEntry.localTable, actClass, metaClass->mbrTable, globalTable, breakAllowed, returnType, pass);
+                    } else {
+                        checkNode(stmtDec, fileTable, methodEntry->u.methodEntry.localTable, actClass, classTable, globalTable, breakAllowed, returnType, pass);
+                    }
+                    
                 }
             }
 
@@ -1900,11 +1905,12 @@ static void checkCallStm(
     TypeList *paramList;
     Absyn *args;
     Type *argType = allocate(sizeof(Type));
-    Type *paramType;
-
+    Type *paramType;    
+    Class *rcvrClass;
+    
     checkNode(rcvrNode, fileTable,localTable, actClass, classTable,
             globalTable, breakAllowed, rcvrType, pass);
-
+    
     if (rcvrType->kind == TYPE_KIND_VOID) {
         error("'void' does not have any methods in '%s' on line %d",
                 node->file,
@@ -1976,7 +1982,11 @@ static void checkCallStm(
         }
     }
 
+    rcvrClass = rcvrType->u.simpleType.class;
+    
     if ( methodEntry->u.methodEntry.isStatic ) {
+        /* MetaClass for static call */
+        node->u.callStm.rcvrClass = rcvrClass->metaClass;
         /* if the method is static and the receiver is not a class
          * then the method cannot be called */
         if ( rcvrNode->type == ABSYN_VAREXP ) {
@@ -1998,6 +2008,8 @@ static void checkCallStm(
             error("error in CallStm: the receiver is no varExp");
         }
     } else {
+        /* Class for method call */
+        node->u.callStm.rcvrClass = rcvrClass;
         /* if method is not static and the receiver is a class name
          * then the method cannot be called */
         if ( rcvrNode->type == ABSYN_VAREXP ) {
@@ -2063,8 +2075,10 @@ static void checkCallStm(
                     node->line);
         }
     }
-
-    free(rcvrType);
+    
+    
+    /* NEVER EVER RELEASE THIS HERE */
+    /* --> free(rcvrType); <-- */
     free(argType);
 }
 
@@ -2581,6 +2595,10 @@ static void checkCallExp(
     rcvrClass = retType->u.simpleType.class;
     node->u.callExp.rcvrClass = rcvrClass;
     callExpMethodEntry = lookup(rcvrClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+    /* If NULL then it could be static? */
+    if(callExpMethodEntry == NULL) {
+        callExpMethodEntry = lookup(rcvrClass->metaClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+    }
     if(callExpMethodEntry == NULL) {
         error("Method '%s' has vanished from Table", node->u.callExp.name->string);
     }

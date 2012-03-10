@@ -292,7 +292,7 @@ Absyn *newCallStm(char *file, int line,
   node->file = file;
   node->line = line;
   node->u.callStm.name = name;
-  node->u.callStm.rcvr = rcvr;
+  node->u.callStm.rcvr = rcvr;  
   node->u.callStm.args = args;
   return node;
 }
