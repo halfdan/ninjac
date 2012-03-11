@@ -997,7 +997,7 @@ static void checkMethodDec(
 
             /* Add the entry to the classTable if non-static
              * otherwise add the entry to the classTable of the meta class */
-            if (node->u.methodDec.stat || node->u.methodDec.isConstructor) {
+            if (node->u.methodDec.stat) {
                 methodEntry->u.methodEntry.isStatic = FALSE;
                 if(NULL == enter(metaClass->mbrTable, node->u.methodDec.name, methodEntry)) {
                     /* We don't allow method overloading at this point in Ninja */
