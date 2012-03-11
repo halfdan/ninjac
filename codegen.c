@@ -479,6 +479,8 @@ static void generateCodeCallStmt(Absyn *node, Table *table, Entry *currentMethod
         fprintf(asmFile, "\tvmcall\t%d,%d\n",
                 numParams + 1,
                 offset + 1);
+        fprintf(asmFile, "\tdrop\t%d\n",
+                numParams + 1);
     } else {
         generateCodeNode(rcvr, table, currentMethod, returnLabel, breakLabel);
     }
@@ -604,6 +606,7 @@ static void generateCodeCallExp(Absyn *node, Table *table, Entry *currentMethod,
     
     generateCodeNode(node->u.callExp.args, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "\tvmcall\t%d,%d\n", methodEntry->u.methodEntry.numParams + 1, offset + 1);
+    fprintf(asmFile, "\tdrop\t%d\n", methodEntry->u.methodEntry.numParams + 1);
     fprintf(asmFile, "\tpushr\n");
 }
 
