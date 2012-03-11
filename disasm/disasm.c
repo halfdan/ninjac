@@ -92,7 +92,7 @@ char *disasm(unsigned int *code, int addr) {
       if (uimmed == 0) {
         sprintf(buffer, "halt");
       } else {
-        sprintf(buffer, "???");
+        sprintf(buffer, "0x%08X", instr);
       }
       break;
     case PUSHC:
