@@ -594,14 +594,15 @@ static void generateCodeCallExp(Absyn *node, Table *table, Entry *currentMethod,
         default:
             generateCodeNode(node->u.callExp.rcvr, table, currentMethod, returnLabel, breakLabel);
             break;
-    }
+    }    
     methodEntry = lookup(node->u.callExp.rcvrClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+    offset = findVMT(node->u.callExp.rcvrClass->vmt, node->u.callExp.name);
     if(methodEntry == NULL) {
         methodEntry = lookup(node->u.callExp.rcvrClass->metaClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
+        offset = findVMT(node->u.callExp.rcvrClass->metaClass->vmt, node->u.callExp.name);
     }
     
     generateCodeNode(node->u.callExp.args, table, currentMethod, returnLabel, breakLabel);
-    offset = findVMT(node->u.callExp.rcvrClass->vmt, node->u.callExp.name);
     fprintf(asmFile, "\tvmcall\t%d,%d\n", methodEntry->u.methodEntry.numParams + 1, offset + 1);
     fprintf(asmFile, "\tpushr\n");
 }
