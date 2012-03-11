@@ -44,6 +44,11 @@ int localOffset;
 int paramOffset;
 /* global index for meta classes */
 int globalIndex = 0;
+/* index of current classes static vars */
+int currStaticVarIndex;
+/* index of current classes instance vars */
+int currInstanceVarIndex;
+
 
 static void checkNode(
         Absyn *node,
@@ -755,6 +760,8 @@ static void checkClassDec(
             memberList = node->u.classDec.members;
             /* If memberlist isn't empty */
             if (!memberList->u.mbrList.isEmpty) {
+                currInstanceVarIndex = 0;
+                currStaticVarIndex = 0;
                 for(memberDec = memberList->u.mbrList.head;
                         memberList->u.mbrList.isEmpty == FALSE;
                         memberList = memberList->u.mbrList.tail,
@@ -997,8 +1004,9 @@ static void checkMethodDec(
 
             /* Add the entry to the classTable if non-static
              * otherwise add the entry to the classTable of the meta class */
-            if (node->u.methodDec.stat) {
+            if (node->u.methodDec.stat || node->u.methodDec.isConstructor) {
                 methodEntry->u.methodEntry.isStatic = TRUE;
+                methodEntry->u.methodEntry.class = metaClass;
                 if(NULL == enter(metaClass->mbrTable, node->u.methodDec.name, methodEntry)) {
                     /* We don't allow method overloading at this point in Ninja */
                     error("Method already exists in class '%s' in file '%s' on line '%d'.",
@@ -1664,6 +1672,8 @@ static void checkMemberVar(
                     node->file,
                     node->line);
         }
+        varEntry->u.variableEntry.offset = currStaticVarIndex;
+        currStaticVarIndex++;
     } else {
         /* if field is not static 
          * then the objectType must be a non-static type */
@@ -1674,8 +1684,11 @@ static void checkMemberVar(
                 node->file,
                 node->line);
         }
+        
+        varEntry->u.variableEntry.offset = currInstanceVarIndex;
+        currInstanceVarIndex++;
 
-    }
+    }    
 
     *returnType = *(varEntry->u.variableEntry.type);
 
@@ -2655,11 +2668,8 @@ static void checkCallExp(
     rcvrClass = retType->u.simpleType.class;
     
     node->u.callExp.rcvrClass = rcvrClass;
-    callExpMethodEntry = lookup(rcvrClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
-    /* If NULL then it could be static? */
-    if(callExpMethodEntry == NULL) {
-        callExpMethodEntry = lookup(rcvrClass->metaClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
-    }
+    
+    callExpMethodEntry = lookupMember(rcvrClass, node->u.callExp.name, ENTRY_KIND_METHOD);        
     if(callExpMethodEntry == NULL) {
         error("Method '%s' has vanished from Table", node->u.callExp.name->string);
     }

@@ -28,19 +28,11 @@ static char* newMethodLabel(char* filepath, char* classname, char* methodname, b
     hash = djb2(filepath);
 
     /* Label: ClassName_MethodName (+2 for underlines, +8 for hash) */
-    length = strlen(classname) + strlen(methodname) + 2 + 8;
-    if (isStatic) {
-        /* If the method is static we prepend $ to the label */
-        length += strlen("$");
-    }
+    length = strlen(classname) + strlen(methodname) + 2 + 8;    
 
     label = (char *) allocate((length + 1) * sizeof (char *));
 
-    if (isStatic) {
-        sprintf(label, "$%s_%s_%lx", classname, methodname, hash);
-    } else {
-        sprintf(label, "%s_%s_%lx", classname, methodname, hash);
-    }
+    sprintf(label, "%s_%s_%lx", classname, methodname, hash);
 
     return label;
 }
@@ -55,78 +47,85 @@ static void shouldNotReach(char *nodeName) {
     error("code generation should not reach '%s' node", nodeName);
 }
 
-
 /*
  * Absyn *node: LHS of expression
  * Absyn *exp: RHS of expression
  * 
  */
 static void handleVar(Absyn *node, Absyn *exp, Table *table, Entry *currentMethod, int returnLabel, int breakLabel, boolean write) {
-  switch(node->type) {
-    case ABSYN_SIMPLEVAR: {
-      Entry *entry;
-      entry = lookup(table, node->u.simpleVar.name, ENTRY_KIND_VARIABLE | ENTRY_KIND_CLASS);
-      if (entry == NULL) {
-        error("variable/class declaration of '%s' vanished from symbol table",
-            symToString(node->u.simpleVar.name));
-      }
-      if(entry->kind == ENTRY_KIND_CLASS) {
-        if(exp) {
-          generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+    switch (node->type) {
+        case ABSYN_SIMPLEVAR:
+        {
+            Entry *entry;
+            entry = lookup(table, node->u.simpleVar.name, ENTRY_KIND_VARIABLE | ENTRY_KIND_CLASS);
+            if (entry == NULL) {
+                error("variable/class declaration of '%s' vanished from symbol table",
+                        symToString(node->u.simpleVar.name));
+            }
+            if (entry->kind == ENTRY_KIND_CLASS) {
+                if (exp) {
+                    generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+                }
+                fprintf(asmFile, "\tpushg\t%d\n", entry->u.classEntry.class->globalIndex);
+            }/* "self." is optional */
+            else if (entry->u.variableEntry.isLocal) {
+                if (exp) {
+                    generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+                }
+                fprintf(asmFile, "\t%s\t%d\n", write ? "popl" : "pushl", entry->u.variableEntry.offset);
+            } else {
+                /* push self */
+                fprintf(asmFile, "\tpushl\t%d\n", -3 - currentMethod->u.methodEntry.numParams);
+                /* push value */
+                if (exp) {
+                    generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+                }
+                /* access field */
+                fprintf(asmFile, "\t%s\t%d\n", write ? "putf" : "getf", entry->u.variableEntry.offset);
+            }
         }
-        fprintf(asmFile, "\tpushg\t%d\n", entry->u.classEntry.class->globalIndex);
-      }
-      /* "self." is optional */
-      else if(entry->u.variableEntry.isLocal) {
-        if(exp) {
-          generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+            break;
+
+        case ABSYN_MEMBERVAR:
+        {
+            /* Need to show the class */
+            Class *class = node->u.memberVar.objectClass;
+            Entry *fieldEntry = lookupMember(class,
+                    node->u.memberVar.name, ENTRY_KIND_VARIABLE);
+            int thisPosition = -3 - currentMethod->u.methodEntry.numParams;
+
+            if (fieldEntry == NULL) {
+                error("field declaration '%s' vanished from symbol table", node->u.memberVar.name->string);
+            }
+            if(node->u.memberVar.object->type == ABSYN_SUPEREXP
+                    || node->u.memberVar.object->type == ABSYN_SELFEXP) {
+                /* push receiver from stack */
+                fprintf(asmFile, "\tpushl\t%d\n", thisPosition);
+            } else {
+                generateCodeNode(node->u.memberVar.object, table, currentMethod, returnLabel, breakLabel);
+            }
+            if (exp) {
+                generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+            }
+            fprintf(asmFile, "\t%s\t%d\n", write ? "putf" : "getf", fieldEntry->u.variableEntry.offset);
         }
-        fprintf(asmFile, "\t%s\t%d\n", write ? "popl" : "pushl", entry->u.variableEntry.offset);
-      }
-      else {
-        /* push self */
-        fprintf(asmFile, "\tpushl\t%d\n", -3 - currentMethod->u.methodEntry.numParams);
-        /* push value */
-        if(exp) {
-          generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+        break;
+
+        case ABSYN_ARRAYVAR:
+        {
+            generateCodeNode(node->u.arrayVar.var, table, currentMethod, returnLabel, breakLabel);
+            generateCodeNode(node->u.arrayVar.index, table, currentMethod, returnLabel, breakLabel);
+            if (exp) {
+                generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
+            }
+            fprintf(asmFile, "\t%s\n", write ? "putfa" : "getfa");
         }
-        /* access field */
-        fprintf(asmFile, "\t%s\t%d\n", write ? "putf" : "getf", entry->u.variableEntry.offset);
-      }
+            break;
+
+        default:
+            error("Invalid var-type");
+            break;
     }
-    break;
- 
-    case ABSYN_MEMBERVAR: {
-      /* Need to show the class */     
-      Class *class = node->u.memberVar.objectClass;
-      Entry *fieldEntry = lookupMember(class,
-          node->u.memberVar.name, ENTRY_KIND_VARIABLE);
-      
-      if (fieldEntry == NULL) {
-        error("field declaration '%s' vanished from symbol table", node->u.memberVar.name->string);
-      }
-      generateCodeNode(node->u.memberVar.object, table, currentMethod, returnLabel, breakLabel);
-      if(exp) {
-        generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
-      }
-      fprintf(asmFile, "\t%s\t%d\n", write ? "putf" : "getf", fieldEntry->u.variableEntry.offset);
-    }
-    break;
- 
-    case ABSYN_ARRAYVAR: {
-      generateCodeNode(node->u.arrayVar.var, table, currentMethod, returnLabel, breakLabel);
-      generateCodeNode(node->u.arrayVar.index, table, currentMethod, returnLabel, breakLabel);
-      if(exp) {
-        generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
-      }
-      fprintf(asmFile, "\t%s\n", write ? "putfa" : "getfa");
-    }
-    break;
- 
-    default:
-      error("Invalid var-type");
-      break;
-  }
 }
 
 static void generateCodeFile(Absyn *node, Table *table, Entry *currentMethod, int returnLabel, int breakLabel) {
@@ -331,22 +330,22 @@ static void generateCodeAssignStmt(Absyn *node, Table *table, Entry *currentMeth
         int returnLabel, int breakLabel) {
 
     handleVar(node->u.assignStm.var, node->u.assignStm.exp, table, currentMethod, returnLabel, breakLabel, TRUE);
-/*
-    Absyn *varNode = node->u.assignStm.var;
-    Absyn *exp = node->u.assignStm.exp;
-    Sym *name = getVarName(varNode);
+    /*
+        Absyn *varNode = node->u.assignStm.var;
+        Absyn *exp = node->u.assignStm.exp;
+        Sym *name = getVarName(varNode);
 
-    Entry *entry = lookup(currentMethod->u.methodEntry.localTable, name, ENTRY_KIND_VARIABLE);
+        Entry *entry = lookup(currentMethod->u.methodEntry.localTable, name, ENTRY_KIND_VARIABLE);
 
-    if (entry != NULL) {
-        generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);        
-    }
-*/
+        if (entry != NULL) {
+            generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);        
+        }
+     */
     /* Depending on the receiver of the value we need
      * to do a different evaluation.
      */
-/*    fprintf(asmFile, "\tpopl\t%d\n", entry->u.variableEntry.offset);*/
-            
+    /*    fprintf(asmFile, "\tpopl\t%d\n", entry->u.variableEntry.offset);*/
+
     /*    Absyn *varVar = var->u.varExp.var;*/
     /*    Type *varType = var->u.varExp.expType;*/
     /*    Entry *varEntry;*/
@@ -366,6 +365,7 @@ static void generateCodeIfStmt1(Absyn *node, Table *table, Entry *currentMethod,
 
     label1 = newLabel();
     generateCodeNode(node->u.ifStm1.test, table, currentMethod, returnLabel, breakLabel);
+    fprintf(asmFile, "\tgetf\t1\n");
     fprintf(asmFile, "\tbrf\t_L%d\n", label1);
     generateCodeNode(node->u.ifStm1.thenPart, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "_L%d:\n", label1);
@@ -379,6 +379,7 @@ static void generateCodeIfStmt2(Absyn *node, Table *table, Entry *currentMethod,
     label1 = newLabel();
     label2 = newLabel();
     generateCodeNode(node->u.ifStm2.test, table, currentMethod, returnLabel, breakLabel);
+    fprintf(asmFile, "\tgetf\t1\n");
     fprintf(asmFile, "\tbrf\t_L%d\n", label1);
     generateCodeNode(node->u.ifStm2.thenPart, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "\tjmp\t_L%d\n", label2);
@@ -399,6 +400,7 @@ static void generateCodeWhileStmt(Absyn *node, Table *table, Entry *currentMetho
     generateCodeNode(node->u.whileStm.body, table, currentMethod, returnLabel, newBreakLabel);
     fprintf(asmFile, "_L%d:\n", label2);
     generateCodeNode(node->u.whileStm.test, table, currentMethod, returnLabel, newBreakLabel);
+    fprintf(asmFile, "\tgetf\t1\n");
     fprintf(asmFile, "\tbrt\t_L%d\n", label1);
     fprintf(asmFile, "_L%d:\n", newBreakLabel);
 }
@@ -412,6 +414,7 @@ static void generateCodeDoStmt(Absyn *node, Table *table, Entry *currentMethod,
     fprintf(asmFile, "_L%d:\n", label1);
     generateCodeNode(node->u.doStm.body, table, currentMethod, returnLabel, newBreakLabel);
     generateCodeNode(node->u.doStm.test, table, currentMethod, returnLabel, newBreakLabel);
+    fprintf(asmFile, "\tgetf\t1\n");
     fprintf(asmFile, "\tbrt\t_L%d\n", label1);
     fprintf(asmFile, "_L%d:\n", newBreakLabel);
 }
@@ -459,40 +462,50 @@ static void generateCodeCallStmt(Absyn *node, Table *table, Entry *currentMethod
     Absyn *rcvr = node->u.callStm.rcvr;
     Absyn *args = node->u.callStm.args;
     Sym *name = node->u.callStm.name;
-    Type *rcvrType = getExpType(rcvr);
     Class *rcvrClass = node->u.callStm.rcvrClass;
     Entry *methodEntry;
     int offset;
     int numParams;
-    
+    int thisPosition;
+
     methodEntry = lookupMember(rcvrClass, name, ENTRY_KIND_METHOD);
-    
+
     if (methodEntry->u.methodEntry.isStatic) {
         /* rcvrClass == rcvrMetaclass */
         fprintf(asmFile, "\tpushg\t%d\n", rcvrClass->globalIndex);
-        
-        offset = findVMT(rcvrClass->vmt, name);
-        numParams = methodEntry->u.methodEntry.numParams;
-
-        generateCodeNode(args, table, currentMethod, returnLabel, breakLabel);
-
-        fprintf(asmFile, "\tvmcall\t%d,%d\n",
-                numParams + 1,
-                offset + 1);
-        fprintf(asmFile, "\tdrop\t%d\n",
-                numParams + 1);
     } else {
-        generateCodeNode(rcvr, table, currentMethod, returnLabel, breakLabel);
+        /* Position of self/super receiver on the stack as 0th argument */
+        thisPosition = -methodEntry->u.methodEntry.numParams - 2 - 1;
+        /* We need to switch over the receiver of the callExp */
+        switch (node->u.callStm.rcvr->type) {
+            case ABSYN_SUPEREXP:
+                rcvrClass = methodEntry->u.methodEntry.class->superClass;
+                /* Refetch the methodEntry to get the correct label for vmcall */
+                methodEntry = lookupMember(rcvrClass, node->u.callStm.name, ENTRY_KIND_METHOD);
+            case ABSYN_SELFEXP:
+                /* push receiver from stack */
+                fprintf(asmFile, "\tpushl\t%d\n", thisPosition);
+                break;
+            default:
+                generateCodeNode(node->u.callStm.rcvr, table, currentMethod, returnLabel, breakLabel);
+                break;
+        }
     }
 
-    /* ToDo */
+    offset = findVMT(rcvrClass->vmt, name);
+    numParams = methodEntry->u.methodEntry.numParams;
 
+    generateCodeNode(args, table, currentMethod, returnLabel, breakLabel);
+
+    fprintf(asmFile, "\tvmcall\t%d,%d\n", numParams + 1, offset + 1);
+    fprintf(asmFile, "\tdrop\t%d\n", numParams + 1);
 }
 
 static void generateCodeSuperExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     shouldNotReach("SuperExp");
 }
+
 /*
 static void generateVarExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
@@ -505,105 +518,107 @@ static void generateVarExp(Absyn *node, Table *table, Entry *currentMethod,
 
 static void generateCodeVarExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
-  Class *objectClass;
-  Entry *varEntry, *classEntry;
-  Absyn *varNode, *objectNode;
-  Sym *varName;
-  int varOffset;
+    Class *objectClass;
+    Entry *varEntry, *classEntry;
+    Absyn *varNode, *objectNode;
+    Sym *varName;
+    int varOffset;
 
-  varNode = node->u.varExp.var;
+    varNode = node->u.varExp.var;
 
-  switch(varNode->type) {
+    switch (varNode->type) {
 
-    case ABSYN_SIMPLEVAR:
-      varName = varNode->u.simpleVar.name;
+        case ABSYN_SIMPLEVAR:
+            varName = varNode->u.simpleVar.name;
 
-      /* lookup variable */
-      varEntry = lookup(table, varName, ENTRY_KIND_VARIABLE);
+            /* lookup variable */
+            varEntry = lookup(table, varName, ENTRY_KIND_VARIABLE);
 
-      if(varEntry != NULL) {
-        varOffset = varEntry->u.variableEntry.offset;
-  
-        /* generate code to push the variable's value */
-        if(varEntry->u.variableEntry.isLocal) {     /* real local variable or parameter */
-          fprintf(asmFile, "\tpushl\t%d\n", varOffset);
-        }
-        else {                                      /* field variable */
-          /*fprintf(asmFile, "\tpushl\t%d\n", currOffsetOfThis);*/
-          fprintf(asmFile, "\tgetf\t%d\n", varOffset);
-        }
-      }
+            if (varEntry != NULL) {
+                varOffset = varEntry->u.variableEntry.offset;
 
-      else {
-        /* else handle variable as class name */
-        classEntry = lookup(table, varName, ENTRY_KIND_CLASS);
-      
-        if(classEntry == NULL) {
-          error("statically named class '%s' vanished from symbol table", varName);
-        }
-      
-        fprintf(asmFile, "\tpushg\t%d\n", classEntry->u.classEntry.class->metaClass->globalIndex);
-      }
+                /* generate code to push the variable's value */
+                if (varEntry->u.variableEntry.isLocal) { /* real local variable or parameter */
+                    fprintf(asmFile, "\tpushl\t%d\n", varOffset);
+                } else { /* field variable */
+                    fprintf(asmFile, "\tpushl\t%d\n", -3 -currentMethod->u.methodEntry.numParams);
+                    fprintf(asmFile, "\tgetf\t%d\n", varOffset);
+                }
+            } else {
+                /* else handle variable as class name */
+                classEntry = lookup(table, varName, ENTRY_KIND_CLASS);
 
-      break;
+                if (classEntry == NULL) {
+                    error("statically named class '%s' vanished from symbol table", varName);
+                }
 
-    case ABSYN_ARRAYVAR:
-      /* generate code to push basic variable / array's address */
-      generateCodeNode(varNode->u.arrayVar.var, table, currentMethod, returnLabel, breakLabel);
+                fprintf(asmFile, "\tpushg\t%d\n", classEntry->u.classEntry.class->metaClass->globalIndex);
+            }
 
-      /* generate code to push the index of the field to get */
-      generateCodeNode(varNode->u.arrayVar.index, table, currentMethod, returnLabel, breakLabel);
+            break;
 
-      /* generate the final get */
-      fprintf(asmFile, "\tgetfa\n");
-      break;
+        case ABSYN_ARRAYVAR:
+            /* generate code to push basic variable / array's address */
+            generateCodeNode(varNode->u.arrayVar.var, table, currentMethod, returnLabel, breakLabel);
 
-    case ABSYN_MEMBERVAR:
-      objectNode = varNode->u.memberVar.object;
+            /* generate code to push the index of the field to get */
+            generateCodeNode(varNode->u.arrayVar.index, table, currentMethod, returnLabel, breakLabel);
 
-      /* get class of receiver object */
-      objectClass = varNode->u.memberVar.objectClass;
+            /* generate the final get */
+            fprintf(asmFile, "\tgetfa\n");
+            break;
 
-      /* lookup field */
-      varEntry = lookup(table, varNode->u.memberVar.name, ENTRY_KIND_VARIABLE);
-      varOffset = varEntry->u.variableEntry.offset;
+        case ABSYN_MEMBERVAR:
+            objectNode = varNode->u.memberVar.object;
 
-      /* generate code to push the field's value */
-      generateCodeNode(objectNode, table, currentMethod, returnLabel, breakLabel);
+            /* get class of receiver object */
+            objectClass = varNode->u.memberVar.objectClass;
 
-      fprintf(asmFile, "\tgetf\t%d\n", varOffset);
+            /* lookup field */
+            varEntry = lookup(table, varNode->u.memberVar.name, ENTRY_KIND_VARIABLE);
+            varOffset = varEntry->u.variableEntry.offset;
 
-      break;
+            /* generate code to push the field's value */
+            generateCodeNode(objectNode, table, currentMethod, returnLabel, breakLabel);
 
-    default:
-      error("unhandled variable node type %d in for variable expression", varNode->type);
-  }
+            fprintf(asmFile, "\tgetf\t%d\n", varOffset);
+
+            break;
+
+        default:
+            error("unhandled variable node type %d in for variable expression", varNode->type);
+    }
 }
-
 
 static void generateCodeCallExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
-    Entry *methodEntry; 
+    Entry *methodEntry;
+    Class *rcvrClass;
     int offset;
+    int thisPosition;
 
+    methodEntry = lookupMember(node->u.callExp.rcvrClass, node->u.callExp.name, ENTRY_KIND_METHOD);
+
+    /* Position of self/super receiver on the stack as 0th argument */
+    thisPosition = -methodEntry->u.methodEntry.numParams - 2 - 1;
     /* We need to switch over the receiver of the callExp */
     switch (node->u.callExp.rcvr->type) {
         case ABSYN_SUPEREXP:
-            break;
+            rcvrClass = methodEntry->u.methodEntry.class->superClass;
+            /* Refetch the methodEntry to get the correct label for vmcall */
+            methodEntry = lookupMember(rcvrClass, node->u.callExp.name, ENTRY_KIND_METHOD);
         case ABSYN_SELFEXP:
+            /* push receiver from stack */
+            fprintf(asmFile, "\tpushl\t%d\n", thisPosition);
             break;
         default:
             generateCodeNode(node->u.callExp.rcvr, table, currentMethod, returnLabel, breakLabel);
             break;
-    }    
-    methodEntry = lookup(node->u.callExp.rcvrClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
-    offset = findVMT(node->u.callExp.rcvrClass->vmt, node->u.callExp.name);
-    if(methodEntry == NULL) {
-        methodEntry = lookup(node->u.callExp.rcvrClass->metaClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
-        offset = findVMT(node->u.callExp.rcvrClass->metaClass->vmt, node->u.callExp.name);
     }
-    
+
+    offset = findVMT(methodEntry->u.methodEntry.class->vmt, node->u.callExp.name);
+
     generateCodeNode(node->u.callExp.args, table, currentMethod, returnLabel, breakLabel);
     fprintf(asmFile, "\tvmcall\t%d,%d\n", methodEntry->u.methodEntry.numParams + 1, offset + 1);
     fprintf(asmFile, "\tdrop\t%d\n", methodEntry->u.methodEntry.numParams + 1);
@@ -635,9 +650,10 @@ static void generateCodeNewExp(Absyn *node, Table *table, Entry *currentMethod,
     if (entry != NULL) {
         /* Generate code for arguments */
         generateCodeNode(node->u.newExp.args, table, currentMethod, returnLabel, breakLabel);
-        offset = findVMT(class->metaClass->vmt, class->name);
-        fprintf(asmFile, "\tpushg\t%d\n", class->metaClass->globalIndex);
-        fprintf(asmFile, "\tvmcall\t%d,%d\n", entry->u.methodEntry.numParams + 1, offset + 1);
+        fprintf(asmFile, "\tcall\t$%s\n",
+            newMethodLabel(node->file, class->name->string, class->name->string, TRUE)
+        );
+        fprintf(asmFile, "\tdrop\t%d\n", entry->u.methodEntry.numParams);
     }
 }
 
