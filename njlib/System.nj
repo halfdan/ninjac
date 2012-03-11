@@ -20,4 +20,14 @@ public class System extends Object {
 		%}
 	}
 
+	public static Integer readInteger() {
+		asm {%
+			new     2
+		        .addr   Integer
+			dup
+			rdint
+			putf	1
+			popr
+		%}
+	}
 }

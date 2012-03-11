@@ -276,7 +276,7 @@ typedef struct absyn {
     struct {
       Sym *name;		/* the member variable's name */
       struct absyn *object;	/* the object of which it is a member */
-      Class *objectClass;	/* the class of the member variable */
+      Class *objectClass;       /* the class of the member variable */
     } memberVar;
     struct {
       boolean isEmpty;		/* true: last element, head/tail unused */

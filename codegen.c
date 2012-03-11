@@ -97,11 +97,13 @@ static void handleVar(Absyn *node, Absyn *exp, Table *table, Entry *currentMetho
     break;
  
     case ABSYN_MEMBERVAR: {
-      /* Need to show the class */
-      Entry *fieldEntry = lookup(node->u.memberVar.objectClass->mbrTable,
+      /* Need to show the class */     
+      Class *class = node->u.memberVar.objectClass;
+      Entry *fieldEntry = lookupMember(class,
           node->u.memberVar.name, ENTRY_KIND_VARIABLE);
+      
       if (fieldEntry == NULL) {
-        error("field declaration vanished from symbol table");
+        error("field declaration '%s' vanished from symbol table", node->u.memberVar.name->string);
       }
       generateCodeNode(node->u.memberVar.object, table, currentMethod, returnLabel, breakLabel);
       if(exp) {
@@ -489,7 +491,7 @@ static void generateCodeSuperExp(Absyn *node, Table *table, Entry *currentMethod
         int returnLabel, int breakLabel) {
     shouldNotReach("SuperExp");
 }
-
+/*
 static void generateVarExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
     Sym *varName = getVarName(node);
@@ -497,7 +499,85 @@ static void generateVarExp(Absyn *node, Table *table, Entry *currentMethod,
     if (varEntry != NULL) {
         fprintf(asmFile, "\tpushl\t%d\n", varEntry->u.variableEntry.offset);
     }
+}*/
+
+static void generateCodeVarExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+  Class *objectClass;
+  Entry *varEntry, *classEntry;
+  Absyn *varNode, *objectNode;
+  Sym *varName;
+  int varOffset;
+
+  varNode = node->u.varExp.var;
+
+  switch(varNode->type) {
+
+    case ABSYN_SIMPLEVAR:
+      varName = varNode->u.simpleVar.name;
+
+      /* lookup variable */
+      varEntry = lookup(table, varName, ENTRY_KIND_VARIABLE);
+
+      if(varEntry != NULL) {
+        varOffset = varEntry->u.variableEntry.offset;
+  
+        /* generate code to push the variable's value */
+        if(varEntry->u.variableEntry.isLocal) {     /* real local variable or parameter */
+          fprintf(asmFile, "\tpushl\t%d\n", varOffset);
+        }
+        else {                                      /* field variable */
+          /*fprintf(asmFile, "\tpushl\t%d\n", currOffsetOfThis);*/
+          fprintf(asmFile, "\tgetf\t%d\n", varOffset);
+        }
+      }
+
+      else {
+        /* else handle variable as class name */
+        classEntry = lookup(table, varName, ENTRY_KIND_CLASS);
+      
+        if(classEntry == NULL) {
+          error("statically named class '%s' vanished from symbol table", varName);
+        }
+      
+        fprintf(asmFile, "\tpushg\t%d\n", classEntry->u.classEntry.class->metaClass->globalIndex);
+      }
+
+      break;
+
+    case ABSYN_ARRAYVAR:
+      /* generate code to push basic variable / array's address */
+      generateCodeNode(varNode->u.arrayVar.var, table, currentMethod, returnLabel, breakLabel);
+
+      /* generate code to push the index of the field to get */
+      generateCodeNode(varNode->u.arrayVar.index, table, currentMethod, returnLabel, breakLabel);
+
+      /* generate the final get */
+      fprintf(asmFile, "\tgetfa\n");
+      break;
+
+    case ABSYN_MEMBERVAR:
+      objectNode = varNode->u.memberVar.object;
+
+      /* get class of receiver object */
+      objectClass = varNode->u.memberVar.objectClass;
+
+      /* lookup field */
+      varEntry = lookup(table, varNode->u.memberVar.name, ENTRY_KIND_VARIABLE);
+      varOffset = varEntry->u.variableEntry.offset;
+
+      /* generate code to push the field's value */
+      generateCodeNode(objectNode, table, currentMethod, returnLabel, breakLabel);
+
+      fprintf(asmFile, "\tgetf\t%d\n", varOffset);
+
+      break;
+
+    default:
+      error("unhandled variable node type %d in for variable expression", varNode->type);
+  }
 }
+
 
 static void generateCodeCallExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
@@ -824,7 +904,7 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
             generateCodeSuperExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_VAREXP: /* 31 */
-            generateVarExp(node, table, currentMethod, returnLabel, breakLabel);
+            generateCodeVarExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_CALLEXP: /* 32 */
             generateCodeCallExp(node, table, currentMethod, returnLabel, breakLabel);

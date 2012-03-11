@@ -101,5 +101,60 @@ public class Integer extends Object {
         	%}
 	}
 
+	public Boolean lessThan(Integer op) {
+		asm {%
+			// return Obj
+			new 2
+			.addr Boolean
+			dup
 
+			// Calculation
+			pushl -4
+			getf 1
+			pushl -3
+			getf 1
+			lt
+
+	                putf 1
+                	popr
+		%}
+	}
+
+	public Boolean greaterThan(Integer op) {
+		asm {%
+			// return Obj
+			new 2
+			.addr Boolean
+			dup
+
+			// Calculation
+			pushl -4
+			getf 1
+			pushl -3
+			getf 1
+			gt
+
+	                putf 1
+                	popr
+		%}
+	}
+
+	public Boolean equals(Integer obj) {
+		asm {%
+			// return Obj
+			new 2
+			.addr Boolean
+			dup
+
+			// Calculation
+			pushl -4
+			getf 1
+			pushl -3
+			getf 1
+			eq
+
+	                putf 1
+                	popr
+		%}
+	}
 }

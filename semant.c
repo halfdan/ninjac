@@ -1606,14 +1606,11 @@ static void checkMemberVar(
     Entry *varEntry;
     Type *objectType = allocate(sizeof(Type));
     Type *actClassType;
-
-    /* We need to save the class for codegen */
-    node->u.memberVar.objectClass = actClass;
-
+    
     /* determine type of object */
     checkNode(object, fileTable,localTable, actClass, classTable,
             globalTable, breakAllowed, objectType, pass);
-
+    
     if (objectType->kind == TYPE_KIND_VOID) {
         error("'void' does not have any fields in '%s' on line %d",
                 node->file,
@@ -1629,6 +1626,9 @@ static void checkMemberVar(
     /* lookup the name of the membervar in object's class table */
     varEntry = lookupMember(objectType->u.simpleType.class, node->u.simpleVar.name, ENTRY_KIND_VARIABLE);
 
+    /* We need to save the class for codegen */
+    node->u.memberVar.objectClass = objectType->u.simpleType.class;
+    
     if ( varEntry == NULL ) {
         error("field '%s' not found in '%s' on line %d",
                 symToString(node->u.simpleVar.name),
@@ -2104,6 +2104,7 @@ static void checkBinOpExp(
     int op = node->u.binopExp.op;
     Absyn *left  = node->u.binopExp.left;
     Absyn *right = node->u.binopExp.right;
+    Absyn *temp;
     Sym *methodName;
 
     Type *leftType  = allocate(sizeof(Type));
@@ -2202,10 +2203,70 @@ static void checkBinOpExp(
                             node->line);
                 }
             }
-
+            
             *returnType = *booleanType;
             *tmpType = *booleanType;
-
+            
+            switch(op) {
+                case ABSYN_BINOP_EQ:
+                    methodName = newSym("equals");                    
+                    *node = *newCallExp(
+                        node->file, node->line, methodName, 
+                        left, newExpList(right, emptyExpList())
+                    );
+                    node->u.callExp.rcvrClass = leftType->u.simpleType.class;
+                    break;                
+                case ABSYN_BINOP_NE:
+                    methodName = newSym("equals");
+                    temp = newCallExp(
+                        node->file, node->line, 
+                        methodName, left, 
+                        newExpList(right, emptyExpList())
+                    );
+                    temp->u.callExp.rcvrClass = leftType->u.simpleType.class;
+                    temp->u.callExp.expType = tmpType;
+                    *node = *newUnopExp(
+                        node->file, node->line, ABSYN_UNOP_LNOT, temp                            
+                    ); 
+                    node->u.unopExp.expType = tmpType;
+                    break;          
+                case ABSYN_BINOP_LT:
+                    methodName = newSym("lessThan");
+                    *node = *newCallExp(
+                        node->file, node->line, methodName, 
+                        left, newExpList(right, emptyExpList())
+                    );
+                    node->u.callExp.rcvrClass = leftType->u.simpleType.class;
+                    node->u.callExp.expType = tmpType;
+                    break;
+                case ABSYN_BINOP_LE:
+                    methodName = newSym("lessEquals");
+                    *node = *newCallExp(
+                        node->file, node->line, methodName, 
+                        left, newExpList(right, emptyExpList())
+                    );
+                    node->u.callExp.rcvrClass = leftType->u.simpleType.class;
+                    node->u.callExp.expType = tmpType;
+                    break;
+                case ABSYN_BINOP_GT:
+                    methodName = newSym("greaterThan");
+                    *node = *newCallExp(
+                        node->file, node->line, methodName, 
+                        left, newExpList(right, emptyExpList())
+                    );
+                    node->u.callExp.rcvrClass = leftType->u.simpleType.class;
+                    node->u.callExp.expType = tmpType;
+                    break;
+                case ABSYN_BINOP_GE:
+                    methodName = newSym("greaterEquals");
+                    *node = *newCallExp(
+                        node->file, node->line, methodName, 
+                        left, newExpList(right, emptyExpList())
+                    );
+                    node->u.callExp.rcvrClass = leftType->u.simpleType.class;
+                    node->u.callExp.expType = tmpType;
+                    break;
+            }                        
             break;
         case ABSYN_BINOP_ADD:
         case ABSYN_BINOP_SUB:
@@ -2256,18 +2317,17 @@ static void checkBinOpExp(
                     break;
             }
             
-            node = newCallExp(node->file, node->line, methodName, left, newExpList(right, emptyExpList()));
-            node->u.callExp.rcvrClass = leftType->u.simpleType.class;
+            *node = *newCallExp(node->file, node->line, methodName, left, newExpList(right, emptyExpList()));
+            node->u.callExp.rcvrClass = leftType->u.simpleType.class;            
             *returnType = *integerType;
             *tmpType = *integerType;
-
+            node->u.callExp.expType = tmpType;
             break;
         default:
             error("You found an unexspected BinOp: %d", op);
             break;
     }
-
-    node->u.callExp.expType = tmpType;
+    
     free(leftType);
     free(rightType);
 }
