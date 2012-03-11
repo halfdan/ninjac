@@ -583,14 +583,14 @@ static void traverseBintree(Bintree *bintree, Class *class, char *fileName, VMT 
     name = bintree->sym;
 
     if ( entry->kind == ENTRY_KIND_METHOD ) {
-        if ( ! entry->u.methodEntry.isStatic ) {
+        /*if ( ! entry->u.methodEntry.isStatic ) {*/
             offset = findVMT(vmt, name);
             if (offset >= 0) {
                 replaceVMT(vmt, name, className, fileName, offset);
             } else {
                 appendVMT(vmt, name, className, fileName);
             }
-        }
+        /*}*/
     }
     
     traverseBintree(bintree->right, class, fileName, vmt);
@@ -998,7 +998,7 @@ static void checkMethodDec(
             /* Add the entry to the classTable if non-static
              * otherwise add the entry to the classTable of the meta class */
             if (node->u.methodDec.stat) {
-                methodEntry->u.methodEntry.isStatic = FALSE;
+                methodEntry->u.methodEntry.isStatic = TRUE;
                 if(NULL == enter(metaClass->mbrTable, node->u.methodDec.name, methodEntry)) {
                     /* We don't allow method overloading at this point in Ninja */
                     error("Method already exists in class '%s' in file '%s' on line '%d'.",
@@ -2653,6 +2653,7 @@ static void checkCallExp(
     checkNode(node->u.callExp.rcvr, fileTable, localTable, actClass, classTable,
        globalTable, breakAllowed, retType, pass);
     rcvrClass = retType->u.simpleType.class;
+    
     node->u.callExp.rcvrClass = rcvrClass;
     callExpMethodEntry = lookup(rcvrClass->mbrTable, node->u.callExp.name, ENTRY_KIND_METHOD);
     /* If NULL then it could be static? */
