@@ -115,6 +115,8 @@ static void handleVar(Absyn *node, Absyn *exp, Table *table, Entry *currentMetho
         {
             generateCodeNode(node->u.arrayVar.var, table, currentMethod, returnLabel, breakLabel);
             generateCodeNode(node->u.arrayVar.index, table, currentMethod, returnLabel, breakLabel);
+            /* The index is an integer value and we need to push it onto the stack */
+            fprintf(asmFile, "\tgetf\t1\n");
             if (exp) {
                 generateCodeNode(exp, table, currentMethod, returnLabel, breakLabel);
             }
@@ -621,7 +623,9 @@ static void generateCodeNewArrayExp(Absyn *node, Table *table, Entry *currentMet
     Entry *classEntry = lookup(table, node->u.newArrayExp.type, ENTRY_KIND_CLASS);
 
     generateCodeNode(node->u.newArrayExp.size, table, currentMethod, returnLabel, breakLabel);
-
+    /* The size is an integer value, we need to fetch that from the object
+     on the stack */
+    fprintf(asmFile, "\tgetf\t1\n");
     fprintf(asmFile, "\tnewa\n");
     fprintf(asmFile, "\t.addr %s_%lx\n", node->u.newArrayExp.type->string, djb2(classEntry->u.classEntry.class->fileName));
 }
