@@ -955,8 +955,8 @@ static void checkMethodDec(
 
             /* Do we have params? */
             if(!paramList->u.parList.isEmpty) {
-                /* set the offset for the params to -2 */
-                paramOffset = -2;
+                /* set the offset for the params to -3 */
+                paramOffset = -3;
                 /* Loop over all params in the list */
                 for(numParams = 0, paramDec = paramList->u.parList.head;
                         paramList->u.parList.isEmpty == FALSE;
@@ -1161,7 +1161,8 @@ static void checkParamDec(
             variableType = lookupTypeFromAbsyn(node->u.parDec.type, fileTable);
             /* Create new variable entry (a param is a local variable after all) */
             variableEntry = newVariableEntry(TRUE, FALSE, FALSE, variableType);
-            variableEntry->u.variableEntry.offset = paramOffset--;
+            variableEntry->u.variableEntry.offset = paramOffset;
+            paramOffset--;
             /* Add the entry to the localTable */
             if(NULL == enter(localTable, node->u.parDec.name, variableEntry)) {
                 /* Multiple definitions of variables are not allowed  */
@@ -1592,7 +1593,7 @@ static void checkArrayVar(
                     node->line);
         }
     }
-
+    *returnType = *newSimpleType(varEntry->u.variableEntry.type->u.arrayType.base);
     free(integerType);
     free(indexType);
     free(varType);

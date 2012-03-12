@@ -298,34 +298,6 @@ static void generateCodeCompStmt(Absyn *node, Table *table, Entry *currentMethod
     generateCodeNode(node->u.compStm.stms, table, currentMethod, returnLabel, breakLabel);
 }
 
-static Sym *getVarName(Absyn *varNode) {
-    while (varNode->type != ABSYN_SIMPLEVAR) {
-        switch (varNode->type) {
-            case ABSYN_ARRAYVAR:
-            {
-                varNode = varNode->u.arrayVar.var->u.varExp.var;
-                break;
-            }
-            case ABSYN_VAREXP:
-            {
-                varNode = varNode->u.varExp.var;
-                break;
-            }
-            case ABSYN_MEMBERVAR:
-            {
-                return varNode->u.memberVar.name;
-                break;
-            }
-            default:
-            {
-                printf("Error Type %d\n", varNode->type);
-                shouldNotReach("getVarName got some unknown Var-Type");
-            }
-        }
-    }
-    return varNode->u.simpleVar.name;
-}
-
 static void generateCodeAssignStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
@@ -445,21 +417,8 @@ static void generateCodeRetExpStmt(Absyn *node, Table *table, Entry *currentMeth
     fprintf(asmFile, "\tjmp\t_L%d\n", returnLabel);
 }
 
-static Type *getExpType(Absyn *expNode) {
-    switch (expNode->type) {
-        case ABSYN_VAREXP:
-            return expNode->u.varExp.expType;
-        default:
-            error("you found an invalid node in getExpType in types.c!");
-            /* Won't return but GCC complains otherwise */
-            return NULL;
-            break;
-    }
-}
-
 static void generateCodeCallStmt(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
-    Absyn *rcvr = node->u.callStm.rcvr;
     Absyn *args = node->u.callStm.args;
     Sym *name = node->u.callStm.name;
     Class *rcvrClass = node->u.callStm.rcvrClass;
@@ -518,7 +477,7 @@ static void generateVarExp(Absyn *node, Table *table, Entry *currentMethod,
 
 static void generateCodeVarExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
-    Class *objectClass;
+    /* Class *objectClass; */
     Entry *varEntry, *classEntry;
     Absyn *varNode, *objectNode;
     Sym *varName;
@@ -572,7 +531,7 @@ static void generateCodeVarExp(Absyn *node, Table *table, Entry *currentMethod,
             objectNode = varNode->u.memberVar.object;
 
             /* get class of receiver object */
-            objectClass = varNode->u.memberVar.objectClass;
+            /* objectClass = varNode->u.memberVar.objectClass; */
 
             /* lookup field */
             varEntry = lookup(table, varNode->u.memberVar.name, ENTRY_KIND_VARIABLE);
@@ -629,7 +588,6 @@ static void generateCodeNewExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
     int numFields;
-    int offset;
     Class *class;
     Type *type;
     Entry *entry;
