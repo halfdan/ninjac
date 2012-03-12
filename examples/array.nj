@@ -1,0 +1,9 @@
+public class Main extends Object {
+	public static void main() {
+		local Integer[] a;
+
+		a = new Integer[5];
+		a[0] = 10;
+		System.writeInteger(a[0]);
+	}
+}
