@@ -1,0 +1,33 @@
+public class Main extends Object {
+  Main() {} // Constructor
+  public static void main() {
+    local Integer x;
+    local Integer y;
+    local GGT g;
+    x = System.readInteger();
+    y = System.readInteger();
+    g = new GGT(x,y);
+    g.print();
+  }
+}
+
+class GGT extends Object {
+  Integer x;
+  Integer y;
+
+  public GGT(Integer x, Integer y) {
+    self.x = x;
+    self.y = y;
+  }
+
+  public void print() {
+    while (x != y) {
+      if (x > y) {
+        x = x - y;
+      } else {
+        y = y - x;
+      }
+    }
+    System.writeInteger(x);
+  }
+}
