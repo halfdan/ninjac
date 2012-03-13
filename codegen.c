@@ -719,25 +719,49 @@ static void generateCodeIntExp(Absyn *node, Table *table, Entry *currentMethod,
 static void generateCodeInstofExp(Absyn *node, Table *table, Entry *currentMethod,
         int returnLabel, int breakLabel) {
 
-    Type *type;
+    Type *typeNode;
+    Class *typeClass;
 
     /* Generate code for the left side expression (e.g. exp instanceof Type) */
     generateCodeNode(node->u.instofExp.exp, table, currentMethod, returnLabel, breakLabel);
 
-    type = node->u.instofExp.expType;
-    /* ToDO */
-    /* fprintf(asmFile, "\tpushg\t%d\n", <position of type->metaclass>)); */
-    switch (type->kind) {
-        case TYPE_KIND_SIMPLE:
-
-            break;
-        case TYPE_KIND_ARRAY:
-            break;
-        default:
-            error("Wrong kind in generateCodeInstofExp!");
-            break;
+    typeNode = node->u.instofExp.expType;
+    if(typeNode->kind == TYPE_KIND_SIMPLE) {
+      typeClass = typeNode->u.simpleType.class;
+    } else {
+      typeClass = typeNode->u.arrayType.base;
     }
+
     fprintf(asmFile, "\tinstof\n");
+    fprintf(asmFile, "\t.addr\t%s_%lx\n",typeClass->name->string, djb2(typeClass->fileName));
+}
+
+static void generateCodeCastExp(Absyn *node, Table *table, Entry *currentMethod,
+        int returnLabel, int breakLabel) {
+
+    Type *typeNode;
+    Class *typeClass;
+
+    /* generate code to push object */
+    generateCodeNode(node->u.instofExp.exp, table, currentMethod, returnLabel, breakLabel);
+
+    /* generate object duplicate (for instanceof-check) */
+    fprintf(asmFile, "\tdup\n");
+
+    /* generate instanceof-check */
+    typeNode = node->u.instofExp.expType;
+
+    if(typeNode->kind == TYPE_KIND_SIMPLE) {
+      typeClass = typeNode->u.simpleType.class;
+    } else {
+      typeClass = typeNode->u.arrayType.base;
+    }
+
+    fprintf(asmFile, "\tinstof\n");
+    fprintf(asmFile, "\t.addr\t%s_%lx\n",typeClass->name->string, djb2(typeClass->fileName));
+
+    /* generate jump if test fails */
+    fprintf(asmFile, "\tbrf\t_cast_error\n");
 }
 
 static void generateCodeExpList(Absyn *node, Table *table, Entry *currentMethod,
@@ -770,6 +794,7 @@ static void generateProlog(Table* table) {
     fprintf(asmFile, "// _exit()\n");
     fprintf(asmFile, "//\n");
     fprintf(asmFile, "_exit:\n");
+    fprintf(asmFile, "_cast_error:\n");
     fprintf(asmFile, "\tasf\t0\n");
     fprintf(asmFile, "\thalt\n");
     fprintf(asmFile, "\trsf\n");
@@ -868,6 +893,7 @@ static void generateCodeNode(Absyn *node, Table *table, Entry *currentMethod, in
             generateCodeInstofExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_CASTEXP: /* 23 */
+            generateCodeCastExp(node, table, currentMethod, returnLabel, breakLabel);
             break;
         case ABSYN_NILEXP: /* 24 */
             break;
